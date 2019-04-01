@@ -1,0 +1,33 @@
+{
+	"config": "air",
+	"compilerOptions": {
+		"output": "bin/Syrinx-Sound-Manager-Demo.swf",
+		"library-path": [
+			"libs/starling.swc",
+			"libs/feathers.swc",
+			"libs/AeonDesktopTheme.swc",
+			"libs/MinimalDesktopTheme.swc",
+			"libs/MetalWorksDesktopTheme.swc",
+			"../libs/as3-signals.swc"
+		],
+		"source-path": [
+			"src",
+			"../src/",
+			"media"
+		],
+		"default-size": {
+			"width": 1000,
+			"height": 800
+		}
+	},
+	"application": "application.xml",
+	"files": [
+		"src/ch/adolio/Main.as"
+	],
+	"airOptions": {
+		"windows": {
+			"target": "native",
+			"output": "bin/Syrinx-Sound-Manager-Demo.exe"
+		}
+	}
+}

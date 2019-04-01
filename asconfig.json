@@ -1,0 +1,15 @@
+{
+	"type": "lib",
+	"compilerOptions": {
+		"source-path": [
+			"src"
+		],
+		"external-library-path": [
+			"libs"
+		],
+		"include-sources": [
+			"src"
+		],
+		"output": "bin/syrinx.swc"
+	}
+}

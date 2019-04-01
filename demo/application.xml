@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<application xmlns="http://ns.adobe.com/air/application/32.0">
+  <id>Syrinx-Sound-Manager-Demo</id>
+  <versionNumber>0.1</versionNumber>
+  <filename>Syrinx-Sound-Manager-Demo</filename>
+  <name>Syrinx-Sound-Manager-Demo</name>
+  <initialWindow>
+    <title>Syrinx-Sound-Manager-Demo</title>
+    <content>Syrinx-Sound-Manager-Demo.swf</content>
+    <systemChrome>standard</systemChrome>
+    <transparent>false</transparent>
+    <visible>true</visible>
+    <width>1000</width>
+    <height>800</height>
+    <minimizable>true</minimizable>
+    <maximizable>true</maximizable>
+    <resizable>true</resizable>
+    <renderMode>direct</renderMode>
+    <depthAndStencil>true</depthAndStencil>
+  </initialWindow>
+  <!--
+	More options:
+	http://livedocs.adobe.com/flex/3/html/File_formats_1.html#1043413
+	-->
+  <supportedProfiles>desktop extendedDesktop</supportedProfiles>
+  <android>
+    <manifestAdditions><![CDATA[<manifest android:installLocation="auto" xmlns:android="http://schemas.android.com/apk/res/android" />]]></manifestAdditions>
+  </android>
+</application>
