@@ -107,7 +107,7 @@ public function SoundManagerExample()
 
 	// Play sounds
 	var engine1_once:SoundInstance = _soundManager.play("Engine 1", 1.0); // Play once
-	var engine1_twice:SoundInstance = _soundManager.play("Engine 1", 1.0, 0, 2); // Play twice
+	var engine1_twice:SoundInstance = _soundManager.play("Engine 1", 1.0, 0, 1); // Play twice (repeat once)
 	var engine2_infinite:SoundInstance = _soundManager.play("Engine 2", 1.0, 0, -1); // Play infinite
 
 	// Control master volume
