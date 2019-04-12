@@ -186,6 +186,7 @@ trace("Is destroyed: " + si.isDestroyed); // Is destroyed?
 
 ### 💡 Recommendations
 
+- Standard sounds (MP3 Tracks without trimming neither pitching options set) are treated as normal flash sound (no custom data sampling required) which provides better overall performance over advanced sounds processing. Sampling rate is therefore ignored for those sounds.
 - Wav file format is recommended for seamless looping sound since MP3 format introduces silent parts at the beginning & the end of the track.
 	- Another option could be to use MP3 & configure trimming durations either manually or by using the `TrackConfiguration.findTrim()` utility method.
 - Use higher sampling rate for tracks that require more robustness against frame drop (e.g. during loading).

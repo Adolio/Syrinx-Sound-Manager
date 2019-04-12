@@ -2,6 +2,7 @@
 
 ## v0.2 (In development)
 
+- Sound Instance: Improved performance for native MP3 sounds
 - Demo: Fixed WAV file loading cancellation
 
 ## v0.1 (2019-04-05)

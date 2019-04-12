@@ -39,6 +39,8 @@ package ch.adolio.sound
 		private var _track:Track;
 		private var _channel:SoundChannel;
 		private var _soundTransform:SoundTransform;
+		private var _isStandardSound:Boolean; // Standard sound without any special effect such as trimming or pitching
+		private var _standardSoundLoopPosition:Number = 0; // Used to keep track of the actual current position when looping
 		
 		// Options
 		private var _soundConfig:TrackConfiguration;
@@ -425,24 +427,45 @@ package ch.adolio.sound
 			// Reset pause / resume status
 			_isPaused = startPaused;
 			_pauseTime = startPaused ? startTime : 0;
-			
+
 			// Start to play the sound
 			_startTime = startTime;
-			_readingTipPos = _startPosition + int((startTime % length) * SAMPLE_RATE_MS); // Setup the diamond
-			_readLoopsRemaining = loops - Math.floor(startTime / length); // Compute remaining loops from start time
 
-			// Pitch setup in case pitch is set
-			pitchStartPosition = _startTime;
+			// Detect if the sound is a standard one (native MP3, no trimming & no pitch)
+			_isStandardSound = _track is Mp3Track && _pitch == PITCH_DEFAULT && _trimStartDuration == 0 && _trimEndDuration == 0;
+
+			if (_isStandardSound)
+			{
+				// Compute past duration & channel start time
+				_standardSoundLoopPosition = Math.floor(startTime / length) * length;
+				startTime = startTime % length;
+			}
+			else
+			{
+				// Diamond setup
+				_readingTipPos = _startPosition + int((startTime % length) * SAMPLE_RATE_MS); // Setup the diamond
+				_readLoopsRemaining = loops - Math.floor(startTime / length); // Compute remaining loops from start time
+
+				// Pitch setup in case pitch is set
+				pitchStartPosition = _startTime;
+			}
 			
 			// Acquire a channel if sound doesn't start paused
 			if (!startPaused)
 			{
 				// Acquire a sound channel
-				_channel = _fakeSound.play(startTime, -1, _isMuted ? new SoundTransform(0) : _soundTransform);
-				
+				if (_isStandardSound)
+				{
+					_channel = (_track as Mp3Track).sound.play(startTime, 0, _isMuted ? new SoundTransform(0) : _soundTransform);
+				}
+				else
+				{
+					_channel = _fakeSound.play(startTime, -1, _isMuted ? new SoundTransform(0) : _soundTransform);
+				}
+
 				// channel can be null if maximum number of sound channels available is reached (32)
 				if (_channel == null)
-					throw new IllegalOperationError(LOG_PREFIX + " The maximum number of channel has been reached.");
+					throw new IllegalOperationError(LOG_PREFIX + " Impossible to acquire a sound channel. The maximum number of channel has been reached or there is no sound card available.");
 				
 				// listen to sound completion
 				_channel.addEventListener(Event.SOUND_COMPLETE, onSoundComplete);
@@ -713,6 +736,10 @@ package ch.adolio.sound
 			if (_channel == null)
 				return _pauseTime;
 
+			// Standard sound case
+			if (_isStandardSound)
+				return _channel.position + _standardSoundLoopPosition;
+
 			// When the pitch parameter is set, the past time is influenced by the pitch
 			if (_pitch != PITCH_DEFAULT)
 				return _pitchStartPosition + (getTimer() - _pitchStartTimer) * _pitch;
@@ -853,6 +880,17 @@ package ch.adolio.sound
 
 			// Assign the right extraction function according to pitching value
 			_extractionFunc = _pitch == PITCH_DEFAULT ? feedSamples : feedPitchedSamples;
+
+			// Leave standard sound
+			if (_isStandardSound && _pitch != PITCH_DEFAULT)
+			{
+				// Debug
+				if (_verbose)
+					trace(LOG_PREFIX + " Sound '" + _type + "#" + _id + "' is not anymore a standard sound.");
+
+				// Restart sound with proper configuration
+				playInternal(volume, position, loops, isPaused);
+			}
 		}
 
 		/**
@@ -1006,6 +1044,29 @@ package ch.adolio.sound
 		 */
 		private function onSoundComplete(e:Event):void
 		{
+			// Handle looping for standard sound
+			if (_isStandardSound)
+			{
+				// HACK because _channel.position is not exactly equals to length on sound completed.
+				// Stop the channel & update pause time to get the right position when requesting it.
+				stopChannel();
+				_channel = null;
+				_pauseTime = _standardSoundLoopPosition + length;
+
+				// Debug
+				if (_verbose)
+					trace(LOG_PREFIX + " Standard sound completed. Loops remaining: " + loopsRemaining);
+
+				// Replay?
+				if (_infiniteLooping || loopsRemaining >= 0)
+				{
+					// Continue playing...
+					playInternal(volume, position, loops);
+					return;
+				}
+			}
+
+			// Complete the sound
 			complete();
 		}
 	}

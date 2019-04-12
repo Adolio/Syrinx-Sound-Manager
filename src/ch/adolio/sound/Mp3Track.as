@@ -22,6 +22,11 @@ package ch.adolio.sound
 	{
 		private var _nativeSound:flash.media.Sound;
 		
+		public function get sound():flash.media.Sound
+		{
+			return _nativeSound;
+		}
+
 		public function Mp3Track(nativeSound:flash.media.Sound)
 		{
 			_nativeSound = nativeSound;
