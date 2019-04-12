@@ -345,7 +345,7 @@ package ch.adolio.sound
 		}
 
 		//-----------------------------------------------------------------
-		//-- MP3 File loading
+		//-- WAV File loading
 		//-----------------------------------------------------------------
 		
 		private function loadWavSoundFromDisk():void
@@ -353,7 +353,7 @@ package ch.adolio.sound
 			_currentFileRef = new File();
 			
 			_currentFileRef.addEventListener("select", onWavFileSelected);
-			_currentFileRef.addEventListener("cancel", onMp3FileSelectionCanceled);
+			_currentFileRef.addEventListener("cancel", onWavFileSelectionCanceled);
 			
 			var imageFileTypes:FileFilter = new FileFilter("WAV (*.wav)", "*.wav");
 			_currentFileRef.browse([imageFileTypes]);

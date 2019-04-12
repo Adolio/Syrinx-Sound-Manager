@@ -2,6 +2,8 @@
 
 ## v0.2 (In development)
 
+- Demo: Fixed WAV file loading cancellation
+
 ## v0.1 (2019-04-05)
 
 - Initial version of the library
