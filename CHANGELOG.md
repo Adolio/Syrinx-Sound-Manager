@@ -1,5 +1,7 @@
 # Syrinx - Sound Manager: Changelog
 
+## v0.2 (In development)
+
 ## v0.1 (2019-04-05)
 
 - Initial version of the library

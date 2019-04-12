@@ -25,7 +25,7 @@ package ch.adolio.sound
 	public class SoundManager
 	{
 		// Const
-		public static const VERSION:String = "0.1";
+		public static const VERSION:String = "0.2-preview";
 
 		// Core
 		private var _tracksByType:Dictionary = new Dictionary(); // Dictionary of tracks
