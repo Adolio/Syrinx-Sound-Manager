@@ -169,6 +169,16 @@ package ch.adolio.sound
 		
 		/**
 		 * Register a new track.
+		 * 
+		 * <p>
+		 * If `trimStartDuration` is negative the system will automatically look for it by using the auto trimming feature.
+		 * The `TrackConfiguration.trimDefaultSilenceThreshold` is then used for silence threshold.
+		 * </p>
+		 * 
+		 * <p>
+		 * If `trimEndDuration` is negative the system will automatically look for it by using the auto trimming feature.
+		 * The `TrackConfiguration.trimDefaultSilenceThreshold` is then used for silence threshold.
+		 * </p>
 		 */
 		public function registerTrack(type:String, track:Track, trimStartDuration:Number = 0, trimEndDuration:Number = 0, sampling:uint = 2048):TrackConfiguration
 		{

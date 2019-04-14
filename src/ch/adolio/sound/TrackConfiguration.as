@@ -24,6 +24,7 @@ package ch.adolio.sound
 		private var _type:String;
 		
 		// Trimming
+		public static var trimDefaultSilenceThreshold:Number = 0.01; // Default silence threshold for automatic trimming.
 		private var _trimStartDuration:Number = 0; // In milliseconds
 		private var _trimEndDuration:Number = 0; // In milliseconds
 		
@@ -36,6 +37,19 @@ package ch.adolio.sound
 		public static const SAMPLING_MAX_VALUE:uint = 8192;
 		private var _sampling:uint = SAMPLING_MIN_VALUE; // Samples returned per sampling data request (min: 2048, max: 8192)
 		
+		/**
+		 * Track Configuration constructor.
+		 * 
+		 * <p>
+		 * If `trimStartDuration` is negative the system will automatically look for it by using the auto trimming feature.
+		 * The `TrackConfiguration.trimDefaultSilenceThreshold` is then used for silence threshold.
+		 * </p>
+		 * 
+		 * <p>
+		 * If `trimEndDuration` is negative the system will automatically look for it by using the auto trimming feature.
+		 * The `TrackConfiguration.trimDefaultSilenceThreshold` is then used for silence threshold.
+		 * </p>
+		 */
 		public function TrackConfiguration(track:Track, type:String, trimStartDuration:Number = 0, trimEndDuration:Number = 0, sampling = SAMPLING_MIN_VALUE)
 		{
 			// Setup core variables
@@ -80,17 +94,13 @@ package ch.adolio.sound
 		
 		public function set trimStartDuration(value:Number):void
 		{
+			// Automatic trimming
+			if (value < 0)
+				value = findStartTrimDuration(trimDefaultSilenceThreshold);
+
 			// Check for invalid trimming values
 			if (value + _trimEndDuration > _track.length)
-			{
 				throw new ArgumentError("[Track Configuration] Invalid trimming. Start + end trimming cannot be greater than the sound length. Sound length: " + _track.length + ", Trimming length: " + (value + _trimEndDuration));
-			}
-			
-			// Check for negative trimming value
-			if (value < 0)
-			{
-				throw new ArgumentError("[Track Configuration] Invalid trimming duration. Trimming duration cannot be lower than zero.");
-			}
 			
 			// Update trimming
 			_trimStartDuration = value;
@@ -103,17 +113,13 @@ package ch.adolio.sound
 		
 		public function set trimEndDuration(value:Number):void
 		{
+			// Automatic trimming
+			if (value < 0)
+				value = findEndTrimDuration(trimDefaultSilenceThreshold, _track.length);
+
 			// Check for invalid trimming values
 			if (_trimStartDuration + value > _track.length)
-			{
 				throw new ArgumentError("[Track Configuration] Invalid trimming duration. Start + end trimming durations cannot be greater than the sound length. Sound length: " + _track.length + ", Trimming length: " + (value + _trimEndDuration));
-			}
-			
-			// Check for negative trimming value
-			if (value < 0)
-			{
-				throw new ArgumentError("[Track Configuration] Invalid trimming duration. Trimming duration cannot be lower than zero.");
-			}
 			
 			// Update trimming
 			_trimEndDuration = value;

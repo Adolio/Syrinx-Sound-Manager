@@ -3,6 +3,7 @@
 ## v0.2 (In development)
 
 - Sound Instance: Improved performance for native MP3 sounds
+- Sound Manager: Added optional automatic trimming durations detection at track registration
 - Demo: Fixed WAV file loading cancellation
 
 ## v0.1 (2019-04-05)
