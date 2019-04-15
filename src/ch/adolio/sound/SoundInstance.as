@@ -38,6 +38,7 @@ package ch.adolio.sound
 		private var _type:String;
 		private var _track:Track;
 		private var _channel:SoundChannel;
+		private static var safeChannelAquisition:Boolean = true; // If false, an error will be raised on channel acquisition failure (play, resume, position set, etc.)
 		private var _soundTransform:SoundTransform;
 		private var _isStandardSound:Boolean; // Standard sound without any special effect such as trimming or pitching
 		private var _standardSoundLoopPosition:Number = 0; // Used to keep track of the actual current position when looping
@@ -383,9 +384,7 @@ package ch.adolio.sound
 		
 		/**
 		 * Play the sound instance.
-		 *
-		 * This method can raise an IllegalOperationError if the maximum number of sound channels available (32) is reached.
-		 *
+		 * 
 		 * @param volume The initial volume
 		 * @param startTime Start position in milliseconds
 		 * @param loops Number of sound repetitions. -1 for infinite looping.
@@ -453,23 +452,38 @@ package ch.adolio.sound
 			// Acquire a channel if sound doesn't start paused
 			if (!startPaused)
 			{
-				// Acquire a sound channel
-				if (_isStandardSound)
+				// Capacity check if Sound Manager available
+				if (manager == null || manager.getPlayingSoundInstancesCount() < manager.maxChannelCapacity)
 				{
-					_channel = (_track as Mp3Track).sound.play(startTime, 0, _isMuted ? new SoundTransform(0) : _soundTransform);
+					// Acquire a sound channel
+					if (_isStandardSound)
+						_channel = (_track as Mp3Track).sound.play(startTime, 0, _isMuted ? new SoundTransform(0) : _soundTransform);
+					else
+						_channel = _fakeSound.play(startTime, -1, _isMuted ? new SoundTransform(0) : _soundTransform);
 				}
 				else
 				{
-					_channel = _fakeSound.play(startTime, -1, _isMuted ? new SoundTransform(0) : _soundTransform);
+					_channel = null;
 				}
 
-				// channel can be null if maximum number of sound channels available is reached (32)
+				// Channel can be null if maximum number of sound channels available is reached or if no sound card is available.
 				if (_channel == null)
-					throw new IllegalOperationError(LOG_PREFIX + " Impossible to acquire a sound channel. The maximum number of channel has been reached or there is no sound card available.");
-				
-				// listen to sound completion
-				_channel.addEventListener(Event.SOUND_COMPLETE, onSoundComplete);
-				
+				{
+					var errorMessage:String = LOG_PREFIX + " Impossible to acquire a sound channel for sound '" + _type + "#" + _id + "'. The maximum number of channels has been reached or there is no sound card available.";
+					if (safeChannelAquisition)
+						trace(errorMessage);
+					else
+						throw new IllegalOperationError(errorMessage);
+
+					// Put the sound in hold
+					_isPaused = true;
+				}
+				else
+				{
+					// Listen to sound completion
+					_channel.addEventListener(Event.SOUND_COMPLETE, onSoundComplete);
+				}
+
 				// Set volume (+check) after having created the channel
 				this.volume = volume;
 			}

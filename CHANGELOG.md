@@ -3,8 +3,12 @@
 ## v0.2 (In development)
 
 - Sound Instance: Improved performance for native MP3 sounds
+- Sound Instance: Added safe channel acquisition option
+- Sound Manager: Added max channel capacity capability
+- Sound Manager: Added getter for playing sound instances count
 - Sound Manager: Added optional automatic trimming durations detection at track registration
 - Demo: Fixed WAV file loading cancellation
+- Demo: Updated to show actually playing sound instances over registered sound instances
 
 ## v0.1 (2019-04-05)
 

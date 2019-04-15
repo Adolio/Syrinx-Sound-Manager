@@ -75,6 +75,9 @@ package ch.adolio.sound
 			
 			// Create sound manager
 			_sndMgr = new SoundManager();
+			//_sndMgr.maxChannelCapacity = 3; // Limit number of simultaneous playing sounds
+
+			// Register to events
 			_sndMgr.trackRegistered.add(onTrackRegisteredToManager);
 			_sndMgr.trackUnregistered.add(onTrackUnregisteredFromManager);
 			_sndMgr.soundInstanceAdded.add(onSoundInstanceAddedToManager);
@@ -206,15 +209,7 @@ package ch.adolio.sound
 		
 		public function playSound(type:String, volume:Number = 1.0, startTime:Number = 0, loops:int = 0):SoundInstance
 		{
-			try
-			{
-				return _sndMgr.play(type, volume, startTime, loops);
-			}
-			catch (e:IllegalOperationError)
-			{
-				trace("[Sound Test] Couldn't play the given sound. Error: " + e.message);
-				return null;
-			}
+			return _sndMgr.play(type, volume, startTime, loops);
 		}
 		
 		public function unregisterSound(soundConfiguration:TrackConfiguration):void
@@ -222,9 +217,9 @@ package ch.adolio.sound
 			_sndMgr.unregisterTrack(soundConfiguration.type);
 		}
 		
-		private function updateRunningSoundsLabel():void
+		public function updateRunningSoundsLabel():void
 		{
-			_runningSoundsLabel.text = "Running sounds (" + _sndMgr.getSoundInstances().length + ")";
+			_runningSoundsLabel.text = "Running sounds (" + _sndMgr.getPlayingSoundInstancesCount() + "/" + _sndMgr.getSoundInstancesCount() + ")";
 		}
 		
 		private function onLoadMp3SoundTriggered(event:Event):void
@@ -273,9 +268,16 @@ package ch.adolio.sound
 		{
 			// Create entry & register sound
 			var entry:SoundInstanceEntry = new SoundInstanceEntry(si);
+			entry.playStatusUpdated.add(onSoundInstanceEntryPlayStatusUpdated);
 			_soundInstanceEntriesContainer.addChild(entry);
 			_soundInstanceEntries.push(entry);
 			
+			// Update running sounds label
+			updateRunningSoundsLabel();
+		}
+
+		private function onSoundInstanceEntryPlayStatusUpdated(entry:SoundInstanceEntry):void
+		{
 			// Update running sounds label
 			updateRunningSoundsLabel();
 		}
@@ -287,8 +289,17 @@ package ch.adolio.sound
 			{
 				if (_soundInstanceEntries[i].soundInstance == si)
 				{
-					_soundInstanceEntriesContainer.removeChild(_soundInstanceEntries[i]);
+					// Find entry
+					var entry:SoundInstanceEntry = _soundInstanceEntries[i];
+
+					// Remove from lists
+					_soundInstanceEntriesContainer.removeChild(entry);
 					_soundInstanceEntries.removeAt(i);
+
+					// Unregister from events
+					entry.playStatusUpdated.add(onSoundInstanceEntryPlayStatusUpdated);
+
+					// No need to look for more entries
 					break;
 				}
 			}

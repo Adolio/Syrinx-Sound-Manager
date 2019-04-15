@@ -42,6 +42,7 @@ Go to the [demo](./demo/) folder, configure the project & run it or if you get t
 		- Get all sound instances by type
 		- Stop all sound instances
 		- Destroy all sound instances
+		- Max channel capacity
 	- Events
 		- Track registered
 		- Track unregistered
@@ -94,6 +95,7 @@ public function SoundManagerExample()
 {
 	// Create Sound Manager
 	_soundManager = new SoundManager();
+	_soundManager.maxChannelCapacity = 8; // Limit number of simultaneous playing sounds (for this sound manager only)
 
 	// Register sounds
 	var engineSoundMp3Config:TrackConfiguration = _soundManager.registerTrack("Engine 1", new Mp3Track(new EngineSoundMp3())); // Register a MP3 track

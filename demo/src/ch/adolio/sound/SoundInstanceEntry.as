@@ -23,6 +23,7 @@ package ch.adolio.sound
 	import starling.display.Quad;
 	import starling.display.Sprite;
 	import starling.events.Event;
+	import org.osflash.signals.Signal;
 	
 	public class SoundInstanceEntry extends Sprite implements IAnimatable
 	{
@@ -41,6 +42,8 @@ package ch.adolio.sound
 		
 		public var _isPositionSliderGrabbed:Object;
 		public var _wasPlayingWhenGrabbed:Object;
+
+		public var playStatusUpdated:Signal = new Signal(SoundInstanceEntry);
 		
 		public function SoundInstanceEntry(soundInstance:SoundInstance)
 		{
@@ -179,26 +182,34 @@ package ch.adolio.sound
 			
 			// Update UI volume
 			_volumeSlider.value = _soundInstance.volume; // TODO Do it silently to avoid re-updating the value
+
+			playStatusUpdated.dispatch(this);
 		}
 		
 		private function onSoundPaused(si:SoundInstance):void
 		{
 			updatePauseResumeButtonText();
+
+			playStatusUpdated.dispatch(this);
 		}
 		
 		private function onSoundResumed(si:SoundInstance):void
 		{
 			updatePauseResumeButtonText();
+
+			playStatusUpdated.dispatch(this);
 		}
 		
 		private function onSoundStopped(si:SoundInstance):void
 		{
 			updatePauseResumeButtonText();
+
+			playStatusUpdated.dispatch(this);
 		}
 		
 		private function onSoundCompleted(si:SoundInstance):void
 		{
-			// Nope
+			playStatusUpdated.dispatch(this);
 		}
 		
 		private function onSoundDestroyed(si:SoundInstance):void

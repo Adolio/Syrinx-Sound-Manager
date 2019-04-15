@@ -26,10 +26,12 @@ package ch.adolio.sound
 	{
 		// Const
 		public static const VERSION:String = "0.2-preview";
+		public static const MAX_CHANNELS:uint = 32; // Adobe AIR hard limit
 
 		// Core
 		private var _tracksByType:Dictionary = new Dictionary(); // Dictionary of tracks
 		private var _soundInstances:Vector.<SoundInstance> = new Vector.<SoundInstance>();
+		private var _maxChannelCapacity:uint = MAX_CHANNELS; // Maximum number of sound instances playing simultaneously. The hard limit from Adobe AIR is `MAX_CHANNELS` for all Sound Managers together.
 		
 		// Options
 		private var _volume:Number = 1.0;
@@ -61,15 +63,8 @@ package ch.adolio.sound
 			// Create the sound instance
 			var si:SoundInstance = createSound(type);
 			
-			try
-			{
-				// Start playing
-				si.play(volume, startTime, loops);
-			}
-			catch (e:IllegalOperationError)
-			{
-				trace(LOG_PREFIX + " Couldn't play the given sound. Error: " + e.message);
-			}
+			// Start playing
+			si.play(volume, startTime, loops);
 			
 			return si;
 		}
@@ -102,22 +97,31 @@ package ch.adolio.sound
 		{
 			return _soundInstances.length;
 		}
+
+		/**
+		 * Return the playing number of current sound instances.
+		 */
+		public function getPlayingSoundInstancesCount():uint
+		{
+			var count:uint = 0;
+			var length:int = _soundInstances.length;
+			for (var i:int = 0; i < length; ++i)
+				if (_soundInstances[i].isPlaying)
+					count++;
+			
+			return count;
+		}
 		
 		/**
 		 * Check if the sound manager has a sound instance of the given type.
 		 */
 		public function hasSoundInstancesOfType(type:String):Boolean
 		{
-			// Setup output list
-			var instances:Vector.<SoundInstance> = new Vector.<SoundInstance>();
-			
 			// Look for any instances of the given type
 			var length:int = _soundInstances.length;
 			for (var i:int = 0; i < length; ++i)
-			{
 				if (_soundInstances[i].type == type)
 					return true;
-			}
 			
 			return false;
 		}
@@ -362,6 +366,33 @@ package ch.adolio.sound
 				si = _soundInstances[i];
 				si.volume = si.volume; // Force volume update from manager
 			}
+		}
+
+		//---------------------------------------------------------------------
+		//-- Max Channel Capacity
+		//---------------------------------------------------------------------
+
+		/**
+		 * Get the maximum possible number of sound instances playing simultaneously for this Sound Manager.
+		 */
+		public function get maxChannelCapacity():uint
+		{
+			return _maxChannelCapacity;
+		}
+
+		/**
+		 * Set the maximum possible number of sound instances playing simultaneously for this Sound Manager.
+		 * 
+		 * <p>
+		 * Note: the hard limit from Adobe AIR is MAX_CHANNELS (32) for all Sound Managers together.
+		 * </p>
+		 */
+		public function set maxChannelCapacity(value:uint):void
+		{
+			if (value > MAX_CHANNELS)
+				throw new ArgumentError(LOG_PREFIX + " Invalid argument. Max channel capacity cannot be bigger than " + MAX_CHANNELS + ". This is an hard limit from Adobe AIR.");
+
+			_maxChannelCapacity = value;
 		}
 	}
 }
