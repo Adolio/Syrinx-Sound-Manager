@@ -1,6 +1,6 @@
 # Syrinx - Sound Manager: Changelog
 
-## v0.2 (In development)
+## v0.2 (2019-04-16)
 
 - Sound Instance: Improved performance for native MP3 sounds
 - Sound Instance: Added safe channel acquisition option
