@@ -50,7 +50,7 @@ package ch.adolio.sound
 		 * The `TrackConfiguration.trimDefaultSilenceThreshold` is then used for silence threshold.
 		 * </p>
 		 */
-		public function TrackConfiguration(track:Track, type:String, trimStartDuration:Number = 0, trimEndDuration:Number = 0, sampling = SAMPLING_MIN_VALUE)
+		public function TrackConfiguration(track:Track, type:String, trimStartDuration:Number = 0, trimEndDuration:Number = 0, sampling:uint = SAMPLING_MIN_VALUE)
 		{
 			// Setup core variables
 			_track = track;
