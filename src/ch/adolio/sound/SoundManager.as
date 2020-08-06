@@ -155,15 +155,16 @@ package ch.adolio.sound
 		 */
 		public function destroyAllSoundInstances(stopSoundBeforeDestroying:Boolean = true):void
 		{
-			var length:int = _soundInstances.length;
-			for (var i:int = 0; i < length; ++i)
+			while (_soundInstances.length > 0)
 			{
+				var si:SoundInstance = _soundInstances[0];
+
 				// Stop sound instance
 				if (stopSoundBeforeDestroying)
-					_soundInstances[i].stop();
+					si.stop();
 				
 				// Destroy sound instance
-				_soundInstances[i].destroy();
+				si.destroy(); // This will automatically remove the instance from the list of sound instances
 			}
 		}
 		
