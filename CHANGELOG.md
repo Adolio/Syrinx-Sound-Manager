@@ -1,5 +1,7 @@
 # Syrinx - Sound Manager: Changelog
 
+## v0.3 (In development)
+
 ## v0.2 (2019-04-16)
 
 - Sound Instance: Improved performance for native MP3 sounds
