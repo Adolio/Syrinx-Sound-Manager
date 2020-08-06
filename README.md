@@ -65,6 +65,7 @@ Go to the [demo](./demo/) folder, configure the project & run it or if you get t
 		- Pitch
 		- Loops / remaining loops
 		- Position (time & ratio)
+		- Remaining time
 		- Is playing?
 		- Is started?
 		- Is paused?
@@ -177,6 +178,7 @@ trace("Sound length: " + si.length); // One loop length in milliseconds (trimmed
 trace("Sound total length: " + si.totalLength); // Total length in milliseconds (including loops & trim durations)
 trace("Loops: " + si.loops); // Total loops
 trace("Remaining loops: " + si.loopsRemaining); // Remaining loops
+trace("Remaining time: " + si.remainingTime); // Remaining time in milliseconds
 trace("Current position: " + si.position); // Current position in milliseconds
 trace("Current position (ratio): " + si.positionRatio); // Current position (ratio, between 0..1)
 trace("Is started: " + si.isStarted); // Is started?

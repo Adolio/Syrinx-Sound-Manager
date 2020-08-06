@@ -688,6 +688,19 @@ package ch.adolio.sound
 		}
 
 		/**
+		 * Returns the remaining play time in milliseconds.
+		 * 
+		 * Note: If infinite looping is active, `Number.POSITIVE_INFINITY` will be returned.
+		 */
+		public function get remainingTime():Number
+		{
+			if (_infiniteLooping)
+				return Number.POSITIVE_INFINITY;
+			else
+				return (length - position) + loopsRemaining * length;
+		}
+
+		/**
 		 * Position ratio in the current loop.
 		 * 
 		 * Each loop start at 0 and ends at 1.0.
