@@ -1,6 +1,10 @@
 # Syrinx - Sound Manager: Changelog
 
-## v0.3 (In development)
+## v0.3 (2020-09-30)
+
+- Sound Instance: Added remaining time method
+- Sound Manager: Fixed destroy all sound instances method
+- Track Configuration: Fixed missing parameter type
 
 ## v0.2 (2019-04-16)
 
