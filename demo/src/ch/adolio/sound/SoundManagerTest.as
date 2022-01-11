@@ -34,30 +34,30 @@ package ch.adolio.sound
 	import flash.filesystem.FileMode;
 	import flash.utils.ByteArray;
 	import starling.text.TextFormat;
-	
+
 	public class SoundManagerTest extends Sprite
 	{
 		// Sound Manager
 		private var _sndMgr:SoundManager;
 		private var _masterVolumeSlider:Slider;
-		
+
 		// Loading
 		private var _loadMp3SoundButton:Button;
 		private var _loadWavSoundButton:Button;
 		private var _currentFileRef:File;
-		
+
 		// Registered sounds
 		private var _trackConfigurationEntries:Vector.<TrackConfigurationEntry> = new Vector.<TrackConfigurationEntry>();
 		private var _registeredTrackLabel:Label;
 		private var _trackConfigurationEntriesContainer:ScrollContainer;
 		private var _soundConfigurationEntryHeader:TrackConfigurationEntryHeader;
-		
+
 		// Running sounds
 		private var _soundInstanceEntries:Vector.<SoundInstanceEntry> = new Vector.<SoundInstanceEntry>();
 		private var _runningSoundsLabel:Label;
 		private var _soundInstanceEntriesContainer:ScrollContainer;
 		private var _soundInstanceEntryHeader:SoundInstanceEntryHeader;
-		
+
 		// Embedded sounds source
 		[Embed(source = "../../../../media/sounds/piano_IEEE32_mono_44100.wav", mimeType="application/octet-stream")] public static const piano_IEEE32_mono_44100:Class;
 		[Embed(source = "../../../../media/sounds/piano_IEEE32_stereo_44100.wav", mimeType="application/octet-stream")] public static const piano_IEEE32_stereo_44100:Class;
@@ -65,14 +65,14 @@ package ch.adolio.sound
 		[Embed(source = "../../../../media/sounds/piano_PCM16_stereo_44100.wav", mimeType="application/octet-stream")] public static const piano_PCM16_stereo_44100:Class;
 		[Embed(source = "../../../../media/sounds/piano_MP3_mono_44100.mp3")] public static const piano_MP3_mono_44100:Class;
 		[Embed(source = "../../../../media/sounds/piano_MP3_stereo_44100.mp3")] public static const piano_MP3_stereo_44100:Class;
-		
+
 		public function SoundManagerTest()
 		{
 			super();
-			
+
 			// UI optimization when doing nothing
 			Starling.current.skipUnchangedFrames = true;
-			
+
 			// Create sound manager
 			_sndMgr = new SoundManager();
 			//_sndMgr.maxChannelCapacity = 3; // Limit number of simultaneous playing sounds
@@ -82,10 +82,10 @@ package ch.adolio.sound
 			_sndMgr.trackUnregistered.add(onTrackUnregisteredFromManager);
 			_sndMgr.soundInstanceAdded.add(onSoundInstanceAddedToManager);
 			_sndMgr.soundInstanceRemoved.add(onSoundInstanceRemoveFromManager);
-			
+
 			// Setting up the UI
 			setupUI();
-			
+
 			// Register sounds
 			var predecodeWav:Boolean = false;
 			_sndMgr.registerTrack("piano_IEEE32_mono_44100", new WavTrack(new piano_IEEE32_mono_44100(), predecodeWav));
@@ -95,7 +95,7 @@ package ch.adolio.sound
 			_sndMgr.registerTrack("piano_MP3_mono_44100", new Mp3Track(new piano_MP3_mono_44100()));
 			_sndMgr.registerTrack("piano_MP3_stereo_44100", new Mp3Track(new piano_MP3_stereo_44100()));
 		}
-		
+
 		private function setupUI():void
 		{
 			//-----------------------------------------------------------------
@@ -121,7 +121,7 @@ package ch.adolio.sound
 			masterVolumeLabel.y = titleLable.y + titleLable.height + 16;
 			masterVolumeLabel.validate();
 			addChild(masterVolumeLabel);
-			
+
 			// Volume slider
 			_masterVolumeSlider = new Slider();
 			_masterVolumeSlider.minimum = 0;
@@ -131,11 +131,11 @@ package ch.adolio.sound
 			_masterVolumeSlider.y = masterVolumeLabel.y;
 			_masterVolumeSlider.addEventListener(Event.CHANGE, onMasterVolumeValueChanged);
 			addChild(_masterVolumeSlider);
-			
+
 			//-----------------------------------------------------------------
 			//-- Registered tracks
 			//-----------------------------------------------------------------
-			
+
 			// Registered sounds label
 			_registeredTrackLabel = new Label();
 			_registeredTrackLabel.text = "Registered tracks";
@@ -161,7 +161,7 @@ package ch.adolio.sound
 			_loadWavSoundButton.y = _registeredTrackLabel.y + _registeredTrackLabel.height + 8;
 			_loadWavSoundButton.addEventListener(Event.TRIGGERED, onLoadWavSoundTriggered);
 			addChild(_loadWavSoundButton);
-			
+
 			// Running sounds
 			var soundConfigurationEntriesLayout:VerticalLayout = new VerticalLayout();
 			soundConfigurationEntriesLayout.gap = 1;
@@ -173,15 +173,15 @@ package ch.adolio.sound
 			_trackConfigurationEntriesContainer.width = Starling.current.stage.stageWidth;
 			_trackConfigurationEntriesContainer.height = 240;
 			addChild(_trackConfigurationEntriesContainer);
-			
+
 			// Setup header
 			_soundConfigurationEntryHeader = new TrackConfigurationEntryHeader();
 			_trackConfigurationEntriesContainer.addChild(_soundConfigurationEntryHeader);
-			
+
 			//-----------------------------------------------------------------
 			//-- Running sounds
 			//-----------------------------------------------------------------
-			
+
 			// Registered sounds label
 			_runningSoundsLabel = new Label();
 			_runningSoundsLabel.text = "Running sounds";
@@ -189,7 +189,7 @@ package ch.adolio.sound
 			_runningSoundsLabel.y = _trackConfigurationEntriesContainer.y + _trackConfigurationEntriesContainer.height + 8;
 			_runningSoundsLabel.validate();
 			addChild(_runningSoundsLabel);
-			
+
 			// Running sounds
 			var soundInstanceEntriesLayout:VerticalLayout = new VerticalLayout();
 			soundConfigurationEntriesLayout.gap = 1;
@@ -201,27 +201,27 @@ package ch.adolio.sound
 			_soundInstanceEntriesContainer.width = Starling.current.stage.stageWidth;
 			_soundInstanceEntriesContainer.height = 400;
 			addChild(_soundInstanceEntriesContainer);
-			
+
 			// Setup header
 			_soundInstanceEntryHeader = new SoundInstanceEntryHeader();
 			_soundInstanceEntriesContainer.addChild(_soundInstanceEntryHeader);
 		}
-		
+
 		public function playSound(type:String, volume:Number = 1.0, startTime:Number = 0, loops:int = 0):SoundInstance
 		{
 			return _sndMgr.play(type, volume, startTime, loops);
 		}
-		
+
 		public function unregisterSound(soundConfiguration:TrackConfiguration):void
 		{
 			_sndMgr.unregisterTrack(soundConfiguration.type);
 		}
-		
+
 		public function updateRunningSoundsLabel():void
 		{
 			_runningSoundsLabel.text = "Running sounds (" + _sndMgr.getPlayingSoundInstancesCount() + "/" + _sndMgr.getSoundInstancesCount() + ")";
 		}
-		
+
 		private function onLoadMp3SoundTriggered(event:Event):void
 		{
 			loadMp3SoundFromDisk();
@@ -231,23 +231,23 @@ package ch.adolio.sound
 		{
 			loadWavSoundFromDisk();
 		}
-		
+
 		private function onMasterVolumeValueChanged(event:Event):void
 		{
 			_sndMgr.volume = _masterVolumeSlider.value;
 		}
-		
+
 		private function onTrackRegisteredToManager(tc:TrackConfiguration):void
 		{
 			// Create entry & register sound
 			var entry:TrackConfigurationEntry = new TrackConfigurationEntry(tc, this);
 			_trackConfigurationEntriesContainer.addChild(entry);
 			_trackConfigurationEntries.push(entry);
-			
+
 			// Update running tracks label
 			_registeredTrackLabel.text = "Registered tracks (" + _sndMgr.getRegisterTracks().length + ")";
 		}
-		
+
 		private function onTrackUnregisteredFromManager(tc:TrackConfiguration):void
 		{
 			// Remove completed sound instance entry
@@ -260,10 +260,10 @@ package ch.adolio.sound
 					break;
 				}
 			}
-			
+
 			_registeredTrackLabel.text = "Registered tracks (" + _sndMgr.getRegisterTracks().length + ")";
 		}
-		
+
 		private function onSoundInstanceAddedToManager(si:SoundInstance):void
 		{
 			// Create entry & register sound
@@ -271,7 +271,7 @@ package ch.adolio.sound
 			entry.playStatusUpdated.add(onSoundInstanceEntryPlayStatusUpdated);
 			_soundInstanceEntriesContainer.addChild(entry);
 			_soundInstanceEntries.push(entry);
-			
+
 			// Update running sounds label
 			updateRunningSoundsLabel();
 		}
@@ -281,7 +281,7 @@ package ch.adolio.sound
 			// Update running sounds label
 			updateRunningSoundsLabel();
 		}
-		
+
 		private function onSoundInstanceRemoveFromManager(si:SoundInstance):void
 		{
 			// Remove completed sound instance entry
@@ -303,45 +303,45 @@ package ch.adolio.sound
 					break;
 				}
 			}
-			
+
 			// Update running sounds label
 			updateRunningSoundsLabel();
 		}
-		
+
 		//-----------------------------------------------------------------
 		//-- MP3 File loading
 		//-----------------------------------------------------------------
-		
+
 		private function loadMp3SoundFromDisk():void
 		{
 			_currentFileRef = new File();
-			
+
 			_currentFileRef.addEventListener("select", onMp3FileSelected);
 			_currentFileRef.addEventListener("cancel", onMp3FileSelectionCanceled);
-			
+
 			var imageFileTypes:FileFilter = new FileFilter("MP3 (*.mp3)", "*.mp3");
 			_currentFileRef.browse([imageFileTypes]);
 		}
-		
+
 		private function onMp3FileSelectionCanceled(event:flash.events.Event):void
 		{
 			_currentFileRef.removeEventListener("select", onMp3FileSelected);
 			_currentFileRef.removeEventListener("cancel", onMp3FileSelectionCanceled);
-			
+
 			_currentFileRef = null;
 		}
-		
+
 		private function onMp3FileSelected(e:Object):void
 		{
 			_currentFileRef.removeEventListener("select", onMp3FileSelected);
 			_currentFileRef.removeEventListener("cancel", onMp3FileSelectionCanceled);
-			
+
 			// Load sound for path
 			var sound:Sound = new Sound();
 			sound.load(new URLRequest(_currentFileRef.url));
 			sound.addEventListener(Event.COMPLETE, onMp3SoundLoaded);
 		}
-		
+
 		private function onMp3SoundLoaded(event:flash.events.Event):void
 		{
 			try
@@ -358,33 +358,33 @@ package ch.adolio.sound
 		//-----------------------------------------------------------------
 		//-- WAV File loading
 		//-----------------------------------------------------------------
-		
+
 		private function loadWavSoundFromDisk():void
 		{
 			_currentFileRef = new File();
-			
+
 			_currentFileRef.addEventListener("select", onWavFileSelected);
 			_currentFileRef.addEventListener("cancel", onWavFileSelectionCanceled);
-			
+
 			var imageFileTypes:FileFilter = new FileFilter("WAV (*.wav)", "*.wav");
 			_currentFileRef.browse([imageFileTypes]);
 		}
-		
+
 		private function onWavFileSelectionCanceled(event:flash.events.Event):void
 		{
 			_currentFileRef.removeEventListener("select", onWavFileSelected);
 			_currentFileRef.removeEventListener("cancel", onWavFileSelectionCanceled);
-			
+
 			_currentFileRef = null;
 		}
-		
+
 		private function onWavFileSelected(e:Object):void
 		{
 			_currentFileRef.removeEventListener("select", onWavFileSelected);
 			_currentFileRef.removeEventListener("cancel", onWavFileSelectionCanceled);
-			
+
 			// Load sound for path
-			var fileStream:FileStream = new FileStream(); 
+			var fileStream:FileStream = new FileStream();
 			fileStream.open(_currentFileRef, FileMode.READ);
 			var bytes:ByteArray = new ByteArray();
 			fileStream.readBytes(bytes);

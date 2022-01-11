@@ -11,10 +11,9 @@
 package ch.adolio.sound
 {
 	import flash.errors.IllegalOperationError;
-	import flash.events.Event;
 	import flash.utils.Dictionary;
 	import org.osflash.signals.Signal;
-	
+
 	/**
 	 * Sound Manager.
 	 *
@@ -32,23 +31,23 @@ package ch.adolio.sound
 		private var _tracksByType:Dictionary = new Dictionary(); // Dictionary of tracks
 		private var _soundInstances:Vector.<SoundInstance> = new Vector.<SoundInstance>();
 		private var _maxChannelCapacity:uint = MAX_CHANNELS; // Maximum number of sound instances playing simultaneously. The hard limit from Adobe AIR is `MAX_CHANNELS` for all Sound Managers together.
-		
+
 		// Options
 		private var _volume:Number = 1.0;
-		
+
 		// Signals
 		public var trackRegistered:Signal = new Signal(TrackConfiguration);
 		public var trackUnregistered:Signal = new Signal(TrackConfiguration);
 		public var soundInstanceAdded:Signal = new Signal(SoundInstance);
 		public var soundInstanceRemoved:Signal = new Signal(SoundInstance);
-		
+
 		// Debug
 		private static const LOG_PREFIX:String = "[Sound Manager]";
-		
+
 		//---------------------------------------------------------------------
 		//-- Sound Instance Management
 		//---------------------------------------------------------------------
-		
+
 		/**
 		 * Play a sound of a given registered type.
 		 *
@@ -62,13 +61,13 @@ package ch.adolio.sound
 		{
 			// Create the sound instance
 			var si:SoundInstance = createSound(type);
-			
+
 			// Start playing
 			si.play(volume, startTime, loops);
-			
+
 			return si;
 		}
-		
+
 		/**
 		 * Request sound instances by type attached to this manager.
 		 */
@@ -76,7 +75,7 @@ package ch.adolio.sound
 		{
 			// Setup output list
 			var instances:Vector.<SoundInstance> = new Vector.<SoundInstance>();
-			
+
 			// Look for all instances of the given type
 			var si:SoundInstance;
 			var length:int = _soundInstances.length;
@@ -86,10 +85,10 @@ package ch.adolio.sound
 				if (si.type == type)
 					instances.push(si);
 			}
-			
+
 			return instances;
 		}
-		
+
 		/**
 		 * Return the number of current sound instances.
 		 */
@@ -108,10 +107,10 @@ package ch.adolio.sound
 			for (var i:int = 0; i < length; ++i)
 				if (_soundInstances[i].isPlaying)
 					count++;
-			
+
 			return count;
 		}
-		
+
 		/**
 		 * Check if the sound manager has a sound instance of the given type.
 		 */
@@ -122,22 +121,22 @@ package ch.adolio.sound
 			for (var i:int = 0; i < length; ++i)
 				if (_soundInstances[i].type == type)
 					return true;
-			
+
 			return false;
 		}
-		
+
 		public function getSoundInstances():Vector.<SoundInstance>
 		{
 			// Setup output list
 			var instances:Vector.<SoundInstance> = new Vector.<SoundInstance>();
-			
+
 			var length:int = _soundInstances.length;
 			for (var i:int = 0; i < length; ++i)
 				instances.push(_soundInstances[i]);
-			
+
 			return instances;
 		}
-		
+
 		/**
 		 * Stop all sounds immediately.
 		 */
@@ -147,7 +146,7 @@ package ch.adolio.sound
 			for (var i:int = 0; i < length; ++i)
 				_soundInstances[i].stop();
 		}
-		
+
 		/**
 		 * Destroy all sound instances.
 		 *
@@ -162,24 +161,24 @@ package ch.adolio.sound
 				// Stop sound instance
 				if (stopSoundBeforeDestroying)
 					si.stop();
-				
+
 				// Destroy sound instance
 				si.destroy(); // This will automatically remove the instance from the list of sound instances
 			}
 		}
-		
+
 		//---------------------------------------------------------------------
 		//-- Tracks Management
 		//---------------------------------------------------------------------
-		
+
 		/**
 		 * Register a new track.
-		 * 
+		 *
 		 * <p>
 		 * If `trimStartDuration` is negative the system will automatically look for it by using the auto trimming feature.
 		 * The `TrackConfiguration.trimDefaultSilenceThreshold` is then used for silence threshold.
 		 * </p>
-		 * 
+		 *
 		 * <p>
 		 * If `trimEndDuration` is negative the system will automatically look for it by using the auto trimming feature.
 		 * The `TrackConfiguration.trimDefaultSilenceThreshold` is then used for silence threshold.
@@ -190,18 +189,18 @@ package ch.adolio.sound
 			// Prevent to register twice an sound
 			if (hasTrackRegistered(type))
 				throw new ArgumentError(LOG_PREFIX + " Sound type '" + type + "' is already registered.");
-			
+
 			// Add sound type
 			var trackConfig:TrackConfiguration = new TrackConfiguration(track, type, trimStartDuration, trimEndDuration, sampling);
 			_tracksByType[type] = trackConfig;
-			
+
 			// Emit event
 			trackRegistered.dispatch(trackConfig);
-			
+
 			// Return the config
 			return trackConfig;
 		}
-		
+
 		/**
 		 * Unregister a track.
 		 */
@@ -210,20 +209,20 @@ package ch.adolio.sound
 			// Prevent deleting unregistered track
 			if (!hasTrackRegistered(type))
 				return;
-			
+
 			// Keep a reference of the config before deleting it
 			var trackConfig:TrackConfiguration = _tracksByType[type];
-			
+
 			// Delete entry
 			delete _tracksByType[type];
-			
+
 			// Destroy the configuration
 			trackConfig.destroy();
-			
+
 			// Emit event
 			trackUnregistered.dispatch(trackConfig);
 		}
-		
+
 		/**
 		 * Get list of registered tracks
 		 */
@@ -234,7 +233,7 @@ package ch.adolio.sound
 				tracksConfig.push(trackConfig);
 			return tracksConfig;
 		}
-		
+
 		/**
 		 * Check if a track is already registered.
 		 */
@@ -242,11 +241,11 @@ package ch.adolio.sound
 		{
 			return _tracksByType[type] != undefined;
 		}
-		
+
 		//---------------------------------------------------------------------
 		//-- Internal
 		//---------------------------------------------------------------------
-		
+
 		private function onSoundDestroyed(si:SoundInstance):void
 		{
 			// Look for the sound
@@ -255,12 +254,12 @@ package ch.adolio.sound
 			{
 				// Remove from instances
 				_soundInstances.removeAt(index);
-				
+
 				// Emit event
 				soundInstanceRemoved.dispatch(si);
 			}
 		}
-		
+
 		private function onSoundCompleted(si:SoundInstance):void
 		{
 			// Remove sound instance
@@ -269,7 +268,7 @@ package ch.adolio.sound
 			else
 				trace(LOG_PREFIX + " There is a Sound Manager inconsistency.");
 		}
-		
+
 		/**
 		 * Create a sound instance of a given type.
 		 */
@@ -278,11 +277,11 @@ package ch.adolio.sound
 			// Unknown sound type
 			if (_tracksByType[type] == undefined)
 				throw new IllegalOperationError(LOG_PREFIX + " Sound type not registered: " + type);
-			
+
 			// Sound instance will automatically register to the sound manager
 			return new SoundInstance(_tracksByType[type], this);
 		}
-		
+
 		/**
 		 * Remove a sound instance from the list of sound.
 		 */
@@ -298,13 +297,13 @@ package ch.adolio.sound
 					si.destroyed.remove(onSoundDestroyed);
 					si.completed.remove(onSoundCompleted);
 				}
-				
+
 				// Remove from instances
 				_soundInstances.removeAt(index);
-				
+
 				// Emit event
 				soundInstanceRemoved.dispatch(si);
-				
+
 				// Destroy if asked and not destroyed yet
 				if (!si.isDestroyed && destroy)
 					si.destroy();
@@ -314,7 +313,7 @@ package ch.adolio.sound
 				trace(LOG_PREFIX + " Sound instance not found! Cannot remove.");
 			}
 		}
-		
+
 		/**
 		 * Add a sound instance to the list of sound.
 		 */
@@ -323,25 +322,25 @@ package ch.adolio.sound
 			// Prevent adding an already added sound instance
 			if (_soundInstances.indexOf(si) != -1)
 				throw new ArgumentError(LOG_PREFIX + " Cannot add twice the same sound instance.");
-			
+
 			// Add the instance
 			_soundInstances.push(si);
-			
+
 			// Listen to sound events
 			si.completed.add(onSoundCompleted);
 			si.destroyed.add(onSoundDestroyed);
-			
+
 			// Update (mixed) volume
 			si.volume = si.volume;
-			
+
 			// Emit event
 			soundInstanceAdded.dispatch(si);
 		}
-		
+
 		//---------------------------------------------------------------------
 		//-- Master Volume
 		//---------------------------------------------------------------------
-		
+
 		/**
 		 * Get the current master volume.
 		 */
@@ -349,7 +348,7 @@ package ch.adolio.sound
 		{
 			return _volume;
 		}
-		
+
 		/**
 		 * Set the current master volume.
 		 *
@@ -358,7 +357,7 @@ package ch.adolio.sound
 		public function set volume(value:Number):void
 		{
 			_volume = value;
-			
+
 			// Update (mixed) volume of all the sound instances
 			var si:SoundInstance;
 			var length:int = _soundInstances.length;
@@ -383,7 +382,7 @@ package ch.adolio.sound
 
 		/**
 		 * Set the maximum possible number of sound instances playing simultaneously for this Sound Manager.
-		 * 
+		 *
 		 * <p>
 		 * Note: the hard limit from Adobe AIR is MAX_CHANNELS (32) for all Sound Managers together.
 		 * </p>

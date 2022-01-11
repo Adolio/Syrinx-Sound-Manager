@@ -10,9 +10,9 @@
 
 package ch.adolio.sound
 {
-	import flash.utils.ByteArray;
 	import flash.errors.IllegalOperationError;
-	
+	import flash.utils.ByteArray;
+
 	/**
 	 * Base track class.
 	 *
@@ -29,7 +29,7 @@ package ch.adolio.sound
 		{
 			throw new IllegalOperationError("[Track] Abstract method.");
 		}
-		
+
 		/**
 		 * Extract samples.
 		 *
@@ -42,7 +42,7 @@ package ch.adolio.sound
 		{
 			throw new IllegalOperationError("[Track] Abstract method.");
 		}
-		
+
 		/**
 		 * Destroy the object and make it unusable.
 		 */

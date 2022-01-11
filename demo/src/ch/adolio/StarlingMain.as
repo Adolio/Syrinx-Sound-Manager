@@ -15,7 +15,7 @@ package ch.adolio
 	import ch.adolio.sound.SoundManagerTest;
 	import feathers.themes.MetalWorksDesktopTheme;
 	import feathers.themes.MinimalDesktopTheme;
-	
+
 	public class StarlingMain extends Sprite
 	{
 		public function StarlingMain()
