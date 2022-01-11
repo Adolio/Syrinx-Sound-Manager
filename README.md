@@ -12,7 +12,7 @@ by Aurélien Da Campo ([Adolio](https://twitter.com/AurelienDaCampo))
 
 ## ▶️ Try it!
 
-Go to the [demo](./demo/) folder, configure the project & run it or if you get the latest [release](https://github.com/Adolio/AS3-Sound-Manager/releases), the demo binary should by available in the archive.
+Go to the [demo](./demo/) folder, configure the project & run it or if you get the latest [release](https://github.com/Adolio/AS3-Sound-Manager/releases), the demo binary should be available in the archive.
 
 ## 📄 Full features
 
@@ -177,6 +177,7 @@ trace("Pitch: " + si.pitch); // Pitch
 trace("Sound length: " + si.length); // One loop length in milliseconds (trimmed)
 trace("Sound total length: " + si.totalLength); // Total length in milliseconds (including loops & trim durations)
 trace("Loops: " + si.loops); // Total loops
+trace("Current loop: " + si.currentLoop); // Current loop (-1 = infinite, 0 = first play, 1 = second play, etc.)
 trace("Remaining loops: " + si.loopsRemaining); // Remaining loops
 trace("Remaining time: " + si.remainingTime); // Remaining time in milliseconds
 trace("Current position: " + si.position); // Current position in milliseconds
