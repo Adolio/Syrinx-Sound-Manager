@@ -1,5 +1,12 @@
 # Syrinx - Sound Manager: Changelog
 
+## v0.4 (2022-01-11)
+
+- Sound Instance: Fixed looping capability for standard sounds
+- Sound Instance: Added `currentLoop` accessor
+- Demo: Extended loops limit
+- Demo: Improved stop & re-play capability
+
 ## v0.3 (2020-09-30)
 
 - Sound Instance: Added remaining time method

@@ -24,7 +24,7 @@ package ch.adolio.sound
 	public class SoundManager
 	{
 		// Const
-		public static const VERSION:String = "0.3";
+		public static const VERSION:String = "0.4";
 		public static const MAX_CHANNELS:uint = 32; // Adobe AIR hard limit
 
 		// Core
