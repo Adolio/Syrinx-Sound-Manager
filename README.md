@@ -23,6 +23,7 @@ Go to the [demo](./demo/) folder, configure the project & run it or if you get t
 		- Has registered track?
 	- **Track configuration**
 		- Type
+		- Base volume (for mastering)
 		- Sampling rate
 		- Trimming (start / end)
 			- Automatic trimming detection
@@ -37,7 +38,7 @@ Go to the [demo](./demo/) folder, configure the project & run it or if you get t
 			- MP3
 			- WAV
 	- Sound instances management
-		- Master volume
+		- Master & base volume
 		- Get all sound instances
 		- Get all sound instances by type
 		- Stop all sound instances
@@ -107,6 +108,9 @@ public function SoundManagerExample()
 
 	// Sampling rate configuration
 	engineSoundWavConfig.sampling = 4096; // This defines how much samples are read per sampling request. The value must be between 2048 (included) and 8192 (included).
+
+	// Base volume configuration for mastering
+	engineSoundMp3Config.baseVolume = 0.5; // Custom mastering at track configuration level, the sound can now be player at 1.0 but will still be influenced by this mastering.
 
 	// Play sounds
 	var engine1_once:SoundInstance = _soundManager.play("Engine 1", 1.0); // Play once

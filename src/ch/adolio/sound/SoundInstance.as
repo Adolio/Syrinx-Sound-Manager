@@ -50,6 +50,7 @@ package ch.adolio.sound
 		private var _loops:int = 0;
 		private var _currentLoop:int = 0;
 		private var _isMuted:Boolean = false;
+		private var _baseVolume:Number = VOLUME_MAX; // base volume, not mixed
 		private var _volume:Number = VOLUME_MAX; // instance volume, not mixed
 		private var _pitch:Number = PITCH_DEFAULT;
 		private var _destroyOnComplete:Boolean = true;
@@ -106,6 +107,7 @@ package ch.adolio.sound
 			_samplingCount = trackConfig.sampling;
 			_track = trackConfig.track;
 			_type = trackConfig.type;
+			_baseVolume = trackConfig.baseVolume;
 
 			// Trimming setup
 			_trimStartDuration = trackConfig.trimStartDuration;
@@ -803,6 +805,50 @@ package ch.adolio.sound
 		}
 
 		/**
+		 * Get the base volume.
+		 *
+		 * Returns a value between 0 and 1.
+		 */
+		public function get baseVolume():Number
+		{
+			return _baseVolume;
+		}
+
+		/**
+		 * Set the base volume.
+		 *
+		 * <p>The base volume is here mainly for sound mastering purposes.
+		 * It allows to play around with the `volume` and keep a pre-configured "base" volume.</p>
+		 *
+		 * <p>This value should be configured per track in the `TrackConfiguration` and shouldn't be touched here.</p>
+		 *
+		 * @see mixedVolume
+		 * @see TrackConfiguration
+		 */
+		public function set baseVolume(value:Number):void
+		{
+			// Update the voume value, but respect the mute flag.
+			if (value < VOLUME_MIN)
+				value = VOLUME_MIN;
+			else if (value > VOLUME_MAX || isNaN(volume))
+				value = VOLUME_MAX;
+
+			// Set internal base volume
+			_baseVolume = value;
+
+			// Update current sound transform
+			_soundTransform.volume = mixedVolume;
+
+			// Debug
+			if (_verbose)
+				trace(LOG_PREFIX + " Sound '" + _type + "#" + _id + "' base volume updated to " + value + ". Mixed volume: " + mixedVolume);
+
+			// Apply sound transform if possible & not muted
+			if (!_isMuted && _channel)
+				_channel.soundTransform = _soundTransform;
+		}
+
+		/**
 		 * Get the volume.
 		 *
 		 * Returns a value between 0 and 1.
@@ -843,11 +889,13 @@ package ch.adolio.sound
 		}
 
 		/**
-		 * Return the combined manager volume and sound instance volume.
+		 * Return the combined manager volume, base volume and volume.
+		 *
+		 * <pre>mixedVolume = volume * baseVolume * manager.volume</pre>
 		 */
 		public function get mixedVolume():Number
 		{
-			return _volume * (_manager ? _manager.volume : 1.0);
+			return _volume * _baseVolume * (_manager ? _manager.volume : 1.0);
 		}
 
 		/**

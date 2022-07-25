@@ -23,6 +23,9 @@ package ch.adolio.sound
 		private var _track:Track;
 		private var _type:String;
 
+		// Volume
+		private var _baseVolume:Number = 1.0;
+
 		// Trimming
 		public static var trimDefaultSilenceThreshold:Number = 0.01; // Default silence threshold for automatic trimming.
 		private var _trimStartDuration:Number = 0; // In milliseconds
@@ -85,6 +88,16 @@ package ch.adolio.sound
 		public function get type():String
 		{
 			return _type;
+		}
+
+		public function get baseVolume():Number
+		{
+			return _baseVolume;
+		}
+
+		public function set baseVolume(value:Number):void
+		{
+			_baseVolume = value;
 		}
 
 		public function get trimStartDuration():Number
