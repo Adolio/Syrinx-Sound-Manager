@@ -737,8 +737,8 @@ package ch.adolio.sound
 		public function set positionRatio(value:Number):void
 		{
 			// Check for position ratio validity
-			if (value < VOLUME_MIN || value > VOLUME_MAX)
-				throw new ArgumentError(LOG_PREFIX + " Invalid position ratio. Value must be in the following interval [" + VOLUME_MIN + ".." + VOLUME_MAX + "]");
+			if (value < 0 || value > 1.0)
+				throw new ArgumentError(LOG_PREFIX + " Invalid position ratio. Value must be in the following interval [0..1.0]");
 
 			// Debug
 			if (_verbose)
