@@ -15,6 +15,7 @@ package ch.adolio.sound
 	import feathers.controls.Label;
 	import feathers.controls.LayoutGroup;
 	import feathers.controls.NumericStepper;
+	import feathers.controls.Slider;
 	import feathers.controls.TextInput;
 	import feathers.layout.HorizontalLayout;
 	import starling.core.Starling;
@@ -30,6 +31,7 @@ package ch.adolio.sound
 
 		// configuration
 		private var _soundTypeLabel:Label;
+		private var _baseVolumeSlider:Slider;
 		private var _soundLength:Label;
 		private var _trimStartTextInput:TextInput;
 		private var _trimEndTextInput:TextInput;
@@ -69,10 +71,20 @@ package ch.adolio.sound
 			_soundTypeLabel.text = _trackConfiguration.type;
 			container.addChild(_soundTypeLabel);
 
+			// base volume
+			_baseVolumeSlider = new Slider();
+			_baseVolumeSlider.minimum = 0;
+			_baseVolumeSlider.maximum = 1.0;
+			_baseVolumeSlider.step = 0.05;
+			_baseVolumeSlider.width = 80;
+			_baseVolumeSlider.value = _trackConfiguration.baseVolume;
+			container.addChild(_baseVolumeSlider);
+			_baseVolumeSlider.addEventListener(Event.CHANGE, onBaseVolumeChanged);
+
 			// sound length in ms
 			_soundLength = new Label();
 			_soundLength.width = 80;
-			_soundLength.text = (Math.round(_trackConfiguration.track.length * 100) / 100) + " ms";
+			_soundLength.text = (Math.round(_trackConfiguration.track.length * 100) / 100) + "";
 			container.addChild(_soundLength);
 
 			// Trim start text input
@@ -136,6 +148,11 @@ package ch.adolio.sound
 			_unregisterButton.label = "X";
 			_unregisterButton.addEventListener(Event.TRIGGERED, onUnregisterButtonTriggered);
 			container.addChild(_unregisterButton);
+		}
+
+		private function onBaseVolumeChanged():void
+		{
+			_trackConfiguration.baseVolume = _baseVolumeSlider.value;
 		}
 
 		private function onTrimButtonTriggered():void

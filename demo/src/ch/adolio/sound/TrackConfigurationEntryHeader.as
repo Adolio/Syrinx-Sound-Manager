@@ -13,9 +13,9 @@ package ch.adolio.sound
 	import feathers.controls.Label;
 	import feathers.controls.LayoutGroup;
 	import feathers.layout.HorizontalLayout;
+	import starling.core.Starling;
 	import starling.display.Quad;
 	import starling.display.Sprite;
-	import starling.core.Starling;
 
 	public class TrackConfigurationEntryHeader extends Sprite
 	{
@@ -41,6 +41,12 @@ package ch.adolio.sound
 			soundTypeLabel.width = 160;
 			soundTypeLabel.text = "Type";
 			container.addChild(soundTypeLabel);
+
+			// base volume
+			var baseVolumeLabel:Label = new Label();
+			baseVolumeLabel.width = 80;
+			baseVolumeLabel.text = "Base Volume";
+			container.addChild(baseVolumeLabel);
 
 			// sound length in ms
 			var soundLength:Label = new Label();
