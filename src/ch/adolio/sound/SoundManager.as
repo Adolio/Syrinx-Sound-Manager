@@ -242,6 +242,19 @@ package ch.adolio.sound
 			return _tracksByType[type] != undefined;
 		}
 
+		/**
+		 * Find a registered track by type.
+		 *
+		 * @return the track or `null` if not found.
+		 */
+		public function findRegisteredTrack(type:String):TrackConfiguration
+		{
+			if (hasTrackRegistered(type))
+				return _tracksByType[type];
+
+			return null;
+		}
+
 		//---------------------------------------------------------------------
 		//-- Internal
 		//---------------------------------------------------------------------
