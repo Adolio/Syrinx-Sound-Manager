@@ -1,5 +1,12 @@
 # Syrinx - Sound Manager: Changelog
 
+## v0.5 (2022-07-26)
+
+- Track Configuration: Added base volume for volume mastering configuration
+- Sound Instance: Added base volume for volume mastering
+- Sound Manager: Added `findRegisteredTrack` method
+- Sound Instance: Fixed minor constant usage
+
 ## v0.4 (2022-01-11)
 
 - Sound Instance: Fixed looping capability for standard sounds
