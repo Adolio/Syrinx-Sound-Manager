@@ -21,6 +21,7 @@ package ch.adolio.sound
 	import feathers.controls.ScrollContainer;
 	import feathers.controls.Slider;
 	import feathers.layout.VerticalLayout;
+	import flash.events.Event;
 	import flash.filesystem.File;
 	import flash.filesystem.FileMode;
 	import flash.filesystem.FileStream;
@@ -131,7 +132,7 @@ package ch.adolio.sound
 			_masterVolumeSlider.value = 0.5;
 			_masterVolumeSlider.x = masterVolumeLabel.x + masterVolumeLabel.width + 8;
 			_masterVolumeSlider.y = masterVolumeLabel.y;
-			_masterVolumeSlider.addEventListener(Event.CHANGE, onMasterVolumeValueChanged);
+			_masterVolumeSlider.addEventListener(starling.events.Event.CHANGE, onMasterVolumeValueChanged);
 			addChild(_masterVolumeSlider);
 
 			//-----------------------------------------------------------------
@@ -152,7 +153,7 @@ package ch.adolio.sound
 			_loadMp3SoundButton.validate();
 			_loadMp3SoundButton.x = 16;
 			_loadMp3SoundButton.y = _registeredTrackLabel.y + _registeredTrackLabel.height + 8;
-			_loadMp3SoundButton.addEventListener(Event.TRIGGERED, onLoadMp3SoundTriggered);
+			_loadMp3SoundButton.addEventListener(starling.events.Event.TRIGGERED, onLoadMp3SoundTriggered);
 			addChild(_loadMp3SoundButton);
 
 			// Load WAV
@@ -161,7 +162,7 @@ package ch.adolio.sound
 			_loadWavSoundButton.validate();
 			_loadWavSoundButton.x = _loadMp3SoundButton.x + _loadMp3SoundButton.width + 8;
 			_loadWavSoundButton.y = _registeredTrackLabel.y + _registeredTrackLabel.height + 8;
-			_loadWavSoundButton.addEventListener(Event.TRIGGERED, onLoadWavSoundTriggered);
+			_loadWavSoundButton.addEventListener(starling.events.Event.TRIGGERED, onLoadWavSoundTriggered);
 			addChild(_loadWavSoundButton);
 
 			// Running sounds
@@ -242,17 +243,17 @@ package ch.adolio.sound
 			_poolInfoLabel.text = "Pool info (acquired: " + SoundInstancesPool.instance.acquiredCount + ", released: " + SoundInstancesPool.instance.releaseCount + ", capacity: " + SoundInstancesPool.instance.capacity + ")";
 		}
 
-		private function onLoadMp3SoundTriggered(event:Event):void
+		private function onLoadMp3SoundTriggered(event:starling.events.Event):void
 		{
 			loadMp3SoundFromDisk();
 		}
 
-		private function onLoadWavSoundTriggered(event:Event):void
+		private function onLoadWavSoundTriggered(event:starling.events.Event):void
 		{
 			loadWavSoundFromDisk();
 		}
 
-		private function onMasterVolumeValueChanged(event:Event):void
+		private function onMasterVolumeValueChanged(event:starling.events.Event):void
 		{
 			_sndMgr.volume = _masterVolumeSlider.value;
 		}
@@ -317,8 +318,8 @@ package ch.adolio.sound
 		{
 			// Find & remove sound instance entry
 			for (var i:int = 0; i < _soundInstanceEntries.length; ++i)
-				{
-					var entry:SoundInstanceEntry = _soundInstanceEntries[i];
+			{
+				var entry:SoundInstanceEntry = _soundInstanceEntries[i];
 				if (entry.soundInstance == si)
 				{
 					// Remove from lists
@@ -346,8 +347,8 @@ package ch.adolio.sound
 		{
 			_currentFileRef = new File();
 
-			_currentFileRef.addEventListener("select", onMp3FileSelected);
-			_currentFileRef.addEventListener("cancel", onMp3FileSelectionCanceled);
+			_currentFileRef.addEventListener(flash.events.Event.SELECT, onMp3FileSelected);
+			_currentFileRef.addEventListener(flash.events.Event.CANCEL, onMp3FileSelectionCanceled);
 
 			var imageFileTypes:FileFilter = new FileFilter("MP3 (*.mp3)", "*.mp3");
 			_currentFileRef.browse([imageFileTypes]);
@@ -355,21 +356,21 @@ package ch.adolio.sound
 
 		private function onMp3FileSelectionCanceled(event:flash.events.Event):void
 		{
-			_currentFileRef.removeEventListener("select", onMp3FileSelected);
-			_currentFileRef.removeEventListener("cancel", onMp3FileSelectionCanceled);
+			_currentFileRef.removeEventListener(flash.events.Event.SELECT, onMp3FileSelected);
+			_currentFileRef.removeEventListener(flash.events.Event.CANCEL, onMp3FileSelectionCanceled);
 
 			_currentFileRef = null;
 		}
 
 		private function onMp3FileSelected(e:Object):void
 		{
-			_currentFileRef.removeEventListener("select", onMp3FileSelected);
-			_currentFileRef.removeEventListener("cancel", onMp3FileSelectionCanceled);
+			_currentFileRef.removeEventListener(flash.events.Event.SELECT, onMp3FileSelected);
+			_currentFileRef.removeEventListener(flash.events.Event.CANCEL, onMp3FileSelectionCanceled);
 
 			// Load sound for path
 			var sound:Sound = new Sound();
 			sound.load(new URLRequest(_currentFileRef.url));
-			sound.addEventListener(Event.COMPLETE, onMp3SoundLoaded);
+			sound.addEventListener(flash.events.Event.COMPLETE, onMp3SoundLoaded);
 		}
 
 		private function onMp3SoundLoaded(event:flash.events.Event):void
@@ -393,8 +394,8 @@ package ch.adolio.sound
 		{
 			_currentFileRef = new File();
 
-			_currentFileRef.addEventListener("select", onWavFileSelected);
-			_currentFileRef.addEventListener("cancel", onWavFileSelectionCanceled);
+			_currentFileRef.addEventListener(flash.events.Event.SELECT, onWavFileSelected);
+			_currentFileRef.addEventListener(flash.events.Event.CANCEL, onWavFileSelectionCanceled);
 
 			var imageFileTypes:FileFilter = new FileFilter("WAV (*.wav)", "*.wav");
 			_currentFileRef.browse([imageFileTypes]);
@@ -402,16 +403,16 @@ package ch.adolio.sound
 
 		private function onWavFileSelectionCanceled(event:flash.events.Event):void
 		{
-			_currentFileRef.removeEventListener("select", onWavFileSelected);
-			_currentFileRef.removeEventListener("cancel", onWavFileSelectionCanceled);
+			_currentFileRef.removeEventListener(flash.events.Event.SELECT, onWavFileSelected);
+			_currentFileRef.removeEventListener(flash.events.Event.CANCEL, onWavFileSelectionCanceled);
 
 			_currentFileRef = null;
 		}
 
 		private function onWavFileSelected(e:Object):void
 		{
-			_currentFileRef.removeEventListener("select", onWavFileSelected);
-			_currentFileRef.removeEventListener("cancel", onWavFileSelectionCanceled);
+			_currentFileRef.removeEventListener(flash.events.Event.SELECT, onWavFileSelected);
+			_currentFileRef.removeEventListener(flash.events.Event.CANCEL, onWavFileSelectionCanceled);
 
 			// Load sound for path
 			var fileStream:FileStream = new FileStream();
