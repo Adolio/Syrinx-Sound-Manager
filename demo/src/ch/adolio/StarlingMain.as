@@ -1,7 +1,7 @@
 // =================================================================================================
 //
 //	Syrinx - Sound Manager
-//	Copyright (c) 2019 Aurelien Da Campo (Adolio), All Rights Reserved.
+//	Copyright (c) 2019-2022 Aurelien Da Campo (Adolio), All Rights Reserved.
 //
 //	This program is free software. You can redistribute and/or modify it
 //	in accordance with the terms of the accompanying license agreement.
