@@ -34,12 +34,14 @@ package ch.adolio.sound
 
 		// Options
 		private var _volume:Number = 1.0;
+		private var _isPoolingEnabled:Boolean = false;
 
 		// Signals
 		public var trackRegistered:Signal = new Signal(TrackConfiguration);
 		public var trackUnregistered:Signal = new Signal(TrackConfiguration);
 		public var soundInstanceAdded:Signal = new Signal(SoundInstance);
 		public var soundInstanceRemoved:Signal = new Signal(SoundInstance);
+		public var soundInstanceReleasedToPool:Signal = new Signal(SoundInstance, SoundInstancesPool); // Dispatched when a sound instance is released to the pool
 
 		// Debug
 		private static const LOG_PREFIX:String = "[Sound Manager]";
@@ -280,6 +282,16 @@ package ch.adolio.sound
 				si.manager = null; // This will automatically trigger the unregistration
 			else
 				trace(LOG_PREFIX + " There is a Sound Manager inconsistency.");
+
+			// Destroy or release the sound instance if requested
+			if (si.freeWhenCompleted)
+			{
+				// Return to the pool if coming from it
+				if (si.fromPool)
+					releaseSoundInstanceToPool(si);
+				else
+					si.destroy();
+			}
 		}
 
 		/**
@@ -291,8 +303,10 @@ package ch.adolio.sound
 			if (_tracksByType[type] == undefined)
 				throw new IllegalOperationError(LOG_PREFIX + " Sound type not registered: " + type);
 
-			// Sound instance will automatically register to the sound manager
-			return new SoundInstance(_tracksByType[type], this);
+			if (_isPoolingEnabled)
+				return SoundInstancesPool.instance.acquireSound(_tracksByType[type], this);
+			else
+				return new SoundInstance(_tracksByType[type], this); // Sound instance will automatically register to the sound manager
 		}
 
 		/**
@@ -348,6 +362,46 @@ package ch.adolio.sound
 
 			// Emit event
 			soundInstanceAdded.dispatch(si);
+		}
+
+		//---------------------------------------------------------------------
+		//-- Pooling
+		//---------------------------------------------------------------------
+
+		public function get isPoolingEnabled():Boolean
+		{
+			return _isPoolingEnabled;
+		}
+
+		public function set isPoolingEnabled(value:Boolean):void
+		{
+			_isPoolingEnabled = value;
+		}
+
+		/**
+		 * Release a sound instance to the pool.
+		 *
+		 * @param sound The sound instance to release
+		 */
+		public function releaseSoundInstanceToPool(sound:SoundInstance):void
+		{
+			if (!_isPoolingEnabled)
+				throw new IllegalOperationError("Pooling is not enabled.");
+
+			SoundInstancesPool.instance.releaseSound(sound);
+			soundInstanceReleasedToPool.dispatch(sound, SoundInstancesPool.instance);
+		}
+
+		/**
+		 * Release all sound instances to the pool.
+		 */
+		public function releaseAllSoundInstancesToPool():void
+		{
+			if (!_isPoolingEnabled)
+				throw new IllegalOperationError("Pooling is not enabled.");
+
+			while (_soundInstances.length > 0)
+				releaseSoundInstanceToPool(_soundInstances[0]); // This will automatically remove the instance from the list of sound instances
 		}
 
 		//---------------------------------------------------------------------

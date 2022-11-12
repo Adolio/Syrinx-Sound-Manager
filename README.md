@@ -98,6 +98,7 @@ public function SoundManagerExample()
 	// Create Sound Manager
 	_soundManager = new SoundManager();
 	_soundManager.maxChannelCapacity = 8; // Limit number of simultaneous playing sounds (for this sound manager only)
+	_soundManager.isPoolingEnabled = true; // Enable pooling to re-used already instantiated sounds and reduce GC impacts
 
 	// Register sounds
 	var engineSoundMp3Config:TrackConfiguration = _soundManager.registerTrack("Engine 1", new Mp3Track(new EngineSoundMp3())); // Register a MP3 track
@@ -192,6 +193,26 @@ trace("Is paused: " + si.isPaused); // Is paused?
 trace("Is muted: " + si.isMuted); // Is muted?
 trace("Is destroyed: " + si.isDestroyed); // Is destroyed?
 ```
+
+### ♻️ Sound Instances Pooling
+
+Pooling can significantly reduce memory consumption by re-using already instantiated `Sound Instances`. This should also minimize lags caused by the `Garbage Collector` passage. Therefore this capability could be pretty useful when playing a lot of identical sounds in your application (e.g. player footsteps, arrows thrown by an army of archers, etc.).
+
+The pooling capability can be enabled this way:
+
+```actionscript
+_soundManager.isPoolingEnabled = true;
+```
+
+**Important**: When a `Sound Instance` is completed, it will automatically be returned to the pool. Beware of not keeping references to completed  `Sound Instances` because they might soon be re-used somewhere else.
+
+Infinite looping sounds (e.g. seamless looping sounds) can be manually returned to the pool by calling the following method:
+
+```actionscript
+_soundManager.releaseSoundInstanceToPool(mySound);
+```
+
+**Important**: Never destroy `Sound Instances` when the pooling capability is active. This will break the objects recycling mechanism.
 
 ### 💡 Recommendations
 

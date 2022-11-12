@@ -53,7 +53,8 @@ package ch.adolio.sound
 		private var _baseVolume:Number = VOLUME_MAX; // base volume, not mixed
 		private var _volume:Number = VOLUME_MAX; // instance volume, not mixed
 		private var _pitch:Number = PITCH_DEFAULT;
-		private var _destroyOnComplete:Boolean = true;
+		private var _isFromPool:Boolean = false;
+		private var _freeWhenCompleted:Boolean = true; // Automatically destroy or release the instance when completed
 
 		// Triming
 		private var _trimStartDuration:int = 0; // In milliseconds
@@ -126,6 +127,28 @@ package ch.adolio.sound
 			this.manager = manager; // Will trigger sound manager registration
 		}
 
+		internal function resetAfterRelease():void
+		{
+			// Remove from manager
+			manager = null;
+
+			// Reset internal status
+			_loops = 0;
+			_currentLoop = 0;
+			_isMuted = false;
+			_isPaused= false;
+			_pitch = PITCH_DEFAULT;
+			_isStarted = false;
+			_pauseTime = 0;
+
+			// Reset sound transform
+			_soundTransform.volume = VOLUME_MAX;
+			_soundTransform.pan = 0;
+
+			// Clear signals
+			clearSignals(false);
+		}
+
 		private function setupCustomSamplingVars():void
 		{
 			// Setup start & end positions
@@ -135,6 +158,18 @@ package ch.adolio.sound
 			// Debug
 			if (_verbose)
 				trace(LOG_PREFIX + " Sound '" + _type + "#" + _id + "' is setting up custom sampling vars. Start position: " + _startPosition + ", end position: " + _endPosition);
+		}
+
+		private function clearSignals(ignoreDestroyedSignal:Boolean):void
+		{
+			started.removeAll();
+			completed.removeAll();
+			paused.removeAll();
+			resumed.removeAll();
+			stopped.removeAll();
+
+			if (!ignoreDestroyedSignal)
+				destroyed.removeAll();
 		}
 
 		/**
@@ -149,12 +184,8 @@ package ch.adolio.sound
 			// Mark object as destroyed
 			_isDestroyed = true;
 
-			// Reset signals
-			started.removeAll();
-			completed.removeAll();
-			paused.removeAll();
-			resumed.removeAll();
-			stopped.removeAll();
+			// Reset signals (except the destroyed signal to dispatch it right after)
+			clearSignals(true);
 
 			// Unregister events
 			if (_fakeSound)
@@ -536,10 +567,6 @@ package ch.adolio.sound
 
 			// Dispatch completion event
 			completed.dispatch(this);
-
-			// Destroy instance if requested
-			if (_destroyOnComplete)
-				destroy();
 		}
 
 		/**
@@ -1060,19 +1087,43 @@ package ch.adolio.sound
 		}
 
 		/**
-		 * Get automatic sound instance destruction flag on sound complete.
+		 * Is the sound instance coming from a pool?
 		 */
-		public function get destroyOnComplete():Boolean
+		public function get isFromPool():Boolean
 		{
-			return _destroyOnComplete;
+			return _isFromPool;
 		}
 
 		/**
-		 * Set automatic sound instance destruction flag on sound complete.
+		 * Is the sound instance coming from a pool?
 		 */
-		public function set destroyOnComplete(value:Boolean):void
+		internal function get fromPool():Boolean
 		{
-			_destroyOnComplete = value;
+			return _isFromPool;
+		}
+
+		/**
+		 * Sets the source location of the sound instance
+		 */
+		internal function set fromPool(value:Boolean):void
+		{
+			_isFromPool = value;
+		}
+
+		/**
+		 * Gets the free when completed flags.
+		 */
+		public function get freeWhenCompleted():Boolean
+		{
+			return _freeWhenCompleted;
+		}
+
+		/**
+		 * Sets the free when completed flags.
+		 */
+		public function set freeWhenCompleted(value:Boolean):void
+		{
+			_freeWhenCompleted = value;
 		}
 
 		/**
