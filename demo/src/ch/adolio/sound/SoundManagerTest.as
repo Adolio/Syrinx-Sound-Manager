@@ -266,7 +266,7 @@ package ch.adolio.sound
 			_trackConfigurationEntries.push(entry);
 
 			// Update running tracks label
-			_registeredTrackLabel.text = "Registered tracks (" + _sndMgr.getRegisterTracks().length + ")";
+			_registeredTrackLabel.text = "Registered tracks (" + _sndMgr.getRegisteredTracks().length + ")";
 		}
 
 		private function onTrackUnregisteredFromManager(tc:TrackConfiguration):void
@@ -282,7 +282,7 @@ package ch.adolio.sound
 				}
 			}
 
-			_registeredTrackLabel.text = "Registered tracks (" + _sndMgr.getRegisterTracks().length + ")";
+			_registeredTrackLabel.text = "Registered tracks (" + _sndMgr.getRegisteredTracks().length + ")";
 		}
 
 		private function onSoundInstanceAddedToManager(si:SoundInstance):void

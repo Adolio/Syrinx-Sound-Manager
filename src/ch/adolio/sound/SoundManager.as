@@ -226,9 +226,9 @@ package ch.adolio.sound
 		}
 
 		/**
-		 * Get list of registered tracks
+		 * Returns the list of all registered tracks.
 		 */
-		public function getRegisterTracks():Vector.<TrackConfiguration>
+		public function getRegisteredTracks():Vector.<TrackConfiguration>
 		{
 			var tracksConfig:Vector.<TrackConfiguration> = new Vector.<TrackConfiguration>();
 			for each (var trackConfig:TrackConfiguration in _tracksByType)
