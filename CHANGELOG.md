@@ -1,5 +1,13 @@
 # Syrinx - Sound Manager: Changelog
 
+## v0.6 (2022-11-12)
+
+- Sound Manager: Added `Sound Instance` pooling capability
+- Sound Manager: Fixed typo in `getRegisteredTracks` method
+- Demo: Updated to support the new pooling capability
+- Demo: Fixed viewport
+- Demo: Improved events handling
+
 ## v0.5 (2022-07-26)
 
 - Track Configuration: Added base volume for volume mastering configuration

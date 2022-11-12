@@ -9,6 +9,7 @@ by Aurélien Da Campo ([Adolio](https://twitter.com/AurelienDaCampo))
 - Intuitive & friendly API
 - Seamless sound looping via silence trimming and/or WAV files format
 - Pitch capability
+- Sound instances pooling
 
 ## ▶️ Try it!
 
