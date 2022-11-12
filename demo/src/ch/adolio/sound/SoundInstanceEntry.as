@@ -215,6 +215,11 @@ package ch.adolio.sound
 
 		private function onSoundDestroyed(si:SoundInstance):void
 		{
+			clearSound();
+		}
+
+		public function clearSound():void
+		{
 			// Reset sound instance reference (no need to unsubscribe to events since the object is destroyed)
 			_soundInstance = null;
 
@@ -300,7 +305,11 @@ package ch.adolio.sound
 
 		private function onDestroyButtonTriggered():void
 		{
-			_soundInstance.destroy();
+			// Destroy or release the sound instance
+			if (_soundInstance.manager.isPoolingEnabled && _soundInstance.isFromPool)
+				_soundInstance.manager.releaseSoundInstanceToPool(_soundInstance);
+			else
+				_soundInstance.destroy();
 		}
 
 		private function onVolumeValueChanged(event:Event):void

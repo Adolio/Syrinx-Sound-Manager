@@ -11,9 +11,9 @@
 package ch.adolio.sound
 {
 	import ch.adolio.sound.Mp3Track;
-	import ch.adolio.sound.TrackConfiguration;
 	import ch.adolio.sound.SoundInstance;
 	import ch.adolio.sound.SoundManager;
+	import ch.adolio.sound.TrackConfiguration;
 	import ch.adolio.sound.WavTrack;
 	import feathers.controls.Button;
 	import feathers.controls.Label;
@@ -21,19 +21,16 @@ package ch.adolio.sound
 	import feathers.controls.ScrollContainer;
 	import feathers.controls.Slider;
 	import feathers.layout.VerticalLayout;
-	import flash.errors.IllegalOperationError;
-	import flash.events.EventPhase;
 	import flash.filesystem.File;
+	import flash.filesystem.FileMode;
+	import flash.filesystem.FileStream;
 	import flash.media.Sound;
 	import flash.net.FileFilter;
 	import flash.net.URLRequest;
+	import flash.utils.ByteArray;
 	import starling.core.Starling;
 	import starling.display.Sprite;
 	import starling.events.Event;
-	import flash.filesystem.FileStream;
-	import flash.filesystem.FileMode;
-	import flash.utils.ByteArray;
-	import starling.text.TextFormat;
 
 	public class SoundManagerTest extends Sprite
 	{
@@ -58,6 +55,9 @@ package ch.adolio.sound
 		private var _soundInstanceEntriesContainer:ScrollContainer;
 		private var _soundInstanceEntryHeader:SoundInstanceEntryHeader;
 
+		// Pool
+		private var _poolInfoLabel:Label;
+
 		// Embedded sounds source
 		[Embed(source = "../../../../media/sounds/piano_IEEE32_mono_44100.wav", mimeType="application/octet-stream")] public static const piano_IEEE32_mono_44100:Class;
 		[Embed(source = "../../../../media/sounds/piano_IEEE32_stereo_44100.wav", mimeType="application/octet-stream")] public static const piano_IEEE32_stereo_44100:Class;
@@ -76,12 +76,14 @@ package ch.adolio.sound
 			// Create sound manager
 			_sndMgr = new SoundManager();
 			//_sndMgr.maxChannelCapacity = 3; // Limit number of simultaneous playing sounds
+			_sndMgr.isPoolingEnabled = true; // Enable pooling
 
 			// Register to events
 			_sndMgr.trackRegistered.add(onTrackRegisteredToManager);
 			_sndMgr.trackUnregistered.add(onTrackUnregisteredFromManager);
 			_sndMgr.soundInstanceAdded.add(onSoundInstanceAddedToManager);
 			_sndMgr.soundInstanceRemoved.add(onSoundInstanceRemoveFromManager);
+			_sndMgr.soundInstanceReleasedToPool.add(onSoundInstanceReleasedToPool);
 
 			// Setting up the UI
 			setupUI();
@@ -205,6 +207,19 @@ package ch.adolio.sound
 			// Setup header
 			_soundInstanceEntryHeader = new SoundInstanceEntryHeader();
 			_soundInstanceEntriesContainer.addChild(_soundInstanceEntryHeader);
+
+			//-----------------------------------------------------------------
+			//-- Pool info
+			//-----------------------------------------------------------------
+
+			_poolInfoLabel = new Label();
+			_poolInfoLabel.text = "Placeholder text";
+			_poolInfoLabel.validate();
+			_poolInfoLabel.x = 8;
+			_poolInfoLabel.y = Starling.current.stage.stageHeight - _poolInfoLabel.height - 8;
+			addChild(_poolInfoLabel);
+
+			updatePoolInfoLabel();
 		}
 
 		public function playSound(type:String, volume:Number = 1.0, startTime:Number = 0, loops:int = 0):SoundInstance
@@ -220,6 +235,11 @@ package ch.adolio.sound
 		public function updateRunningSoundsLabel():void
 		{
 			_runningSoundsLabel.text = "Running sounds (" + _sndMgr.getPlayingSoundInstancesCount() + "/" + _sndMgr.getSoundInstancesCount() + ")";
+		}
+
+		public function updatePoolInfoLabel():void
+		{
+			_poolInfoLabel.text = "Pool info (acquired: " + SoundInstancesPool.instance.acquiredCount + ", released: " + SoundInstancesPool.instance.releaseCount + ", capacity: " + SoundInstancesPool.instance.capacity + ")";
 		}
 
 		private function onLoadMp3SoundTriggered(event:Event):void
@@ -274,6 +294,7 @@ package ch.adolio.sound
 
 			// Update running sounds label
 			updateRunningSoundsLabel();
+			updatePoolInfoLabel();
 		}
 
 		private function onSoundInstanceEntryPlayStatusUpdated(entry:SoundInstanceEntry):void
@@ -284,28 +305,37 @@ package ch.adolio.sound
 
 		private function onSoundInstanceRemoveFromManager(si:SoundInstance):void
 		{
-			// Remove completed sound instance entry
-			for (var i:int = 0; i < _soundInstanceEntries.length; ++i)
-			{
-				if (_soundInstanceEntries[i].soundInstance == si)
-				{
-					// Find entry
-					var entry:SoundInstanceEntry = _soundInstanceEntries[i];
+			removeEntryForSoundInstance(si);
+		}
 
+		private function onSoundInstanceReleasedToPool(si:SoundInstance, pool:SoundInstancesPool):void
+		{
+			removeEntryForSoundInstance(si);
+		}
+
+		private function removeEntryForSoundInstance(si:SoundInstance):void
+		{
+			// Find & remove sound instance entry
+			for (var i:int = 0; i < _soundInstanceEntries.length; ++i)
+				{
+					var entry:SoundInstanceEntry = _soundInstanceEntries[i];
+				if (entry.soundInstance == si)
+				{
 					// Remove from lists
 					_soundInstanceEntriesContainer.removeChild(entry);
 					_soundInstanceEntries.removeAt(i);
 
 					// Unregister from events
-					entry.playStatusUpdated.add(onSoundInstanceEntryPlayStatusUpdated);
+					entry.playStatusUpdated.remove(onSoundInstanceEntryPlayStatusUpdated);
 
 					// No need to look for more entries
 					break;
 				}
 			}
 
-			// Update running sounds label
+			// Update labels
 			updateRunningSoundsLabel();
+			updatePoolInfoLabel();
 		}
 
 		//-----------------------------------------------------------------
