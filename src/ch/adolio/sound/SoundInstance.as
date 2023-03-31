@@ -45,7 +45,6 @@ package ch.adolio.sound
 		private var _standardSoundLoopPosition:Number = 0; // Used to keep track of the actual current position when looping
 
 		// Options
-		private var _soundConfig:TrackConfiguration;
 		private var _infiniteLooping:Boolean = false;
 		private var _loops:int = 0;
 		private var _currentLoop:int = 0;
@@ -96,23 +95,11 @@ package ch.adolio.sound
 		 */
 		public function SoundInstance(trackConfig:TrackConfiguration, manager:SoundManager = null)
 		{
-			// Check for argument validity
-			if (!trackConfig)
-				throw new ArgumentError(LOG_PREFIX + " Invalid argument. Track configuration is null.");
-
 			// Debug
 			_id = _idCount++;
 
-			// Setup core members
-			_soundConfig = trackConfig.clone(); // Clone config to prevent any live config changes
-			_samplingCount = trackConfig.sampling;
-			_track = trackConfig.track;
-			_type = trackConfig.type;
-			_baseVolume = trackConfig.baseVolume;
-
-			// Trimming setup
-			_trimStartDuration = trackConfig.trimStartDuration;
-			_trimEndDuration = trackConfig.trimEndDuration;
+			// Setup fields from track configuration
+			setupFromTrackConfiguration(trackConfig);
 
 			// Setup sound transform
 			_soundTransform = new SoundTransform();
@@ -124,7 +111,33 @@ package ch.adolio.sound
 			_fakeSound.addEventListener(SampleDataEvent.SAMPLE_DATA, onSampleData);
 
 			// Setup manager
-			this.manager = manager; // Will trigger sound manager registration
+			this.manager = manager; // This will trigger sound manager registration
+		}
+
+		private function setupFromTrackConfiguration(trackConfig:TrackConfiguration):void
+		{
+			// Check for argument validity
+			if (!trackConfig)
+				throw new ArgumentError(LOG_PREFIX + " Invalid argument. Track configuration is null.");
+
+			// Setup core members
+			_track = trackConfig.track;
+			_type = trackConfig.type;
+
+			// Setup track options
+			_samplingCount = trackConfig.sampling;
+			_baseVolume = trackConfig.baseVolume;
+			_trimStartDuration = trackConfig.trimStartDuration;
+			_trimEndDuration = trackConfig.trimEndDuration;
+		}
+
+		internal function setupFromPool(trackConfig:TrackConfiguration, manager:SoundManager = null):void
+		{
+			// Setup fields from track configuration
+			setupFromTrackConfiguration(trackConfig);
+
+			// Setup manager
+			this.manager = manager; // This will trigger sound manager registration
 		}
 
 		internal function resetAfterRelease():void
@@ -200,7 +213,6 @@ package ch.adolio.sound
 			_soundTransform = null;
 			_channel = null;
 			_fakeSound = null;
-			_soundConfig = null;
 			_pitchExtractedData = null;
 			_extractionFunc = null;
 			started = null;

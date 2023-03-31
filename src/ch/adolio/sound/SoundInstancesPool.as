@@ -70,8 +70,7 @@ package ch.adolio.sound
 					if (_verbose)
 						trace(LOG_PREFIX + " Sound Instance acquired from pool. Saved instantiations: " + _savedCount);
 
-					sound.manager = manager;
-					sound.fromPool = true; // Mark as coming from the pool to restore it later on
+					sound.setupFromPool(trackConfig, manager);
 					return _pool.removeAt(i);
 				}
 			}
