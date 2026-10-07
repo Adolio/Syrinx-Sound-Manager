@@ -37,7 +37,7 @@ so the run is silent. An asynchronous test which does not report its result with
 | Test | Covered behavior |
 |------|------------------|
 | `WavTrackTest` | Length & extracted samples of the supported formats (PCM 16 bits & IEEE float 32 bits, mono & stereo), with & without pre-decoding, extraction from a position & near the end, unknown chunk skipped, rejection of other sample rates, bit depths, channel counts & audio formats |
-| `TrackConfigurationTest` | Defaults, sampling bounds, trims exceeding the length rejected, start trim detection (leading silence, none, samples below the threshold) & automatic start trim, cloning (except the base volume), time to samples conversions, destruction |
+| `TrackConfigurationTest` | Defaults, sampling bounds, trims exceeding the length rejected, start & end trims detection exact to the sample (silences not aligned on the sampling, shorter than the sampling, below the threshold, isolated sample after a silence, max sampling, start position), automatic trims, `findTrim` (including a fully silent track), silent tracks without stack overflow (two blocks & 30 seconds), cloning (except the base volume), time to samples conversions, destruction |
 | `TrackRegistrationTest` | Registration & its signal, lookups, duplicate type rejected, automatic start trim at registration, unregistration & its signal (configuration destroyed, track kept), unregistered type played, max channel capacity |
 | `SoundInstanceTest` | Instances not played: registration to the manager & lookups, initial status, trimmed length, volume, base volume & mixed volume (with clamping), pan & mute, position & position ratio before start (with rejection of invalid values), manager change, destruction & destruction of all instances, null configuration rejected |
 | `PoolTest` | Acquisition, release (signals, stop, listeners cleared), recycling of the same type (pan, mute & pitch reset), other type not recycled, release of all instances, null & destroyed instances rejected, release refused while pooling is disabled |
@@ -45,3 +45,8 @@ so the run is silent. An asynchronous test which does not report its result with
 | `CompletionTestAsync` (async) | Completion destroying the instance, loops played before completion, instance kept alive (`freeWhenCompleted` disabled), completion releasing the instance to the pool |
 
 When fixing a bug, add a test reproducing it first.
+
+## Expected Logs
+
+`[Track Configuration] Impossible to find correct trimming durations. Sound is fully silent with silent threshold of 0.6.`
+is expected: `TrackConfigurationTest` runs `findTrim` on a track made silent by its threshold.

@@ -15,12 +15,13 @@ package ch.adolio.sound.test
 	import ch.adolio.test.ITest;
 
 	/**
-	 * Defaults, sampling & trimming validation, start trim detection, cloning & time conversions of track configurations.
+	 * Defaults, sampling & trimming validation, trims detection, cloning & time conversions of track configurations.
+	 *
+	 * Trims detection is expected to be exact to the sample: 4410 samples last 100 ms.
 	 */
 	public class TrackConfigurationTest implements ITest
 	{
 		private static const EPSILON:Number = 0.000001;
-		private static const TRIM_EPSILON:Number = 0.05; // Trim detection works in samples (1 / 44.1 ms)
 
 		public function execute():void
 		{
@@ -28,7 +29,10 @@ package ch.adolio.sound.test
 			testSamplingBounds();
 			testTrimValidation();
 			testStartTrimDetection();
-			testAutomaticStartTrim();
+			testEndTrimDetection();
+			testAutomaticTrims();
+			testFindTrim();
+			testSilentTracks();
 			testClone();
 			testTimeConversions();
 			testDestroy();
@@ -86,10 +90,17 @@ package ch.adolio.sound.test
 		{
 			// 100 ms of silence, 100 ms of tone, 100 ms of silence
 			var config:TrackConfiguration = new TrackConfiguration(ProbeTrack.toneWithSilences(4410, 4410, 4410), "type");
-			Assert.equalsNumber(config.findStartTrimDuration(0.01), 100, TRIM_EPSILON, "Leading silence of 100 ms");
+			Assert.equalsNumber(config.findStartTrimDuration(0.01), 100, EPSILON, "Leading silence of 100 ms");
+			Assert.equalsNumber(config.findStartTrimDuration(0.01, 50), 100, EPSILON, "Leading silence scanned from 50 ms");
+
+			config.sampling = TrackConfiguration.SAMPLING_MAX_VALUE;
+			Assert.equalsNumber(config.findStartTrimDuration(0.01), 100, EPSILON, "Leading silence with the max sampling");
 
 			config = new TrackConfiguration(ProbeTrack.toneWithSilences(0, 4410, 4410), "type");
-			Assert.equalsNumber(config.findStartTrimDuration(0.01), 0, TRIM_EPSILON, "No leading silence");
+			Assert.equalsNumber(config.findStartTrimDuration(0.01), 0, EPSILON, "No leading silence");
+
+			config = new TrackConfiguration(ProbeTrack.toneWithSilences(3000, 4410, 0), "type");
+			Assert.equalsNumber(config.findStartTrimDuration(0.01), 3000 / ProbeTrack.SAMPLE_RATE_MS, EPSILON, "Leading silence not aligned on the sampling");
 
 			// Samples below the threshold are silent
 			var track:ProbeTrack = ProbeTrack.fromFunction(13230, function(i:int):Number
@@ -97,14 +108,85 @@ package ch.adolio.sound.test
 				return i < 4410 ? 0.005 : 0.5;
 			});
 			config = new TrackConfiguration(track, "type");
-			Assert.equalsNumber(config.findStartTrimDuration(0.01), 100, TRIM_EPSILON, "Leading samples below the threshold");
-			Assert.equalsNumber(config.findStartTrimDuration(0.001), 0, TRIM_EPSILON, "Leading samples above a lower threshold");
+			Assert.equalsNumber(config.findStartTrimDuration(0.01), 100, EPSILON, "Leading samples below the threshold");
+			Assert.equalsNumber(config.findStartTrimDuration(0.001), 0, EPSILON, "Leading samples above a lower threshold");
 		}
 
-		private function testAutomaticStartTrim():void
+		private function testEndTrimDetection():void
 		{
-			var config:TrackConfiguration = new TrackConfiguration(ProbeTrack.toneWithSilences(4410, 4410, 4410), "type", -1);
-			Assert.equalsNumber(config.trimStartDuration, 100, TRIM_EPSILON, "Negative start trim detected automatically");
+			// 100 ms of silence, 100 ms of tone, 100 ms of silence
+			var track:ProbeTrack = ProbeTrack.toneWithSilences(4410, 4410, 4410);
+			var config:TrackConfiguration = new TrackConfiguration(track, "type");
+			Assert.equalsNumber(config.findEndTrimDuration(0.01, track.length), 100, EPSILON, "Trailing silence of 100 ms");
+
+			config.sampling = TrackConfiguration.SAMPLING_MAX_VALUE;
+			Assert.equalsNumber(config.findEndTrimDuration(0.01, track.length), 100, EPSILON, "Trailing silence with the max sampling");
+
+			track = ProbeTrack.toneWithSilences(4410, 4410, 0);
+			config = new TrackConfiguration(track, "type");
+			Assert.equalsNumber(config.findEndTrimDuration(0.01, track.length), 0, EPSILON, "No trailing silence");
+
+			track = ProbeTrack.toneWithSilences(0, 4410, 100);
+			config = new TrackConfiguration(track, "type");
+			Assert.equalsNumber(config.findEndTrimDuration(0.01, track.length), 100 / ProbeTrack.SAMPLE_RATE_MS, EPSILON, "Trailing silence shorter than the sampling");
+
+			track = ProbeTrack.toneWithSilences(0, 4410, 3000);
+			config = new TrackConfiguration(track, "type");
+			Assert.equalsNumber(config.findEndTrimDuration(0.01, track.length), 3000 / ProbeTrack.SAMPLE_RATE_MS, EPSILON, "Trailing silence not aligned on the sampling");
+
+			// A single sample after a silence must be kept
+			track = ProbeTrack.fromFunction(8820, function(i:int):Number
+			{
+				return i < 4410 || i == 8000 ? 0.5 : 0;
+			});
+			config = new TrackConfiguration(track, "type");
+			Assert.equalsNumber(config.findEndTrimDuration(0.01, track.length), 819 / ProbeTrack.SAMPLE_RATE_MS, EPSILON, "Isolated sample after a silence");
+
+			// Samples below the threshold are silent
+			track = ProbeTrack.fromFunction(13230, function(i:int):Number
+			{
+				return i < 8820 ? 0.5 : 0.005;
+			});
+			config = new TrackConfiguration(track, "type");
+			Assert.equalsNumber(config.findEndTrimDuration(0.01, track.length), 100, EPSILON, "Trailing samples below the threshold");
+			Assert.equalsNumber(config.findEndTrimDuration(0.001, track.length), 0, EPSILON, "Trailing samples above a lower threshold");
+		}
+
+		private function testAutomaticTrims():void
+		{
+			var config:TrackConfiguration = new TrackConfiguration(ProbeTrack.toneWithSilences(4410, 4410, 4410), "type", -1, -1);
+			Assert.equalsNumber(config.trimStartDuration, 100, EPSILON, "Negative start trim detected automatically");
+			Assert.equalsNumber(config.trimEndDuration, 100, EPSILON, "Negative end trim detected automatically");
+		}
+
+		private function testFindTrim():void
+		{
+			var config:TrackConfiguration = new TrackConfiguration(ProbeTrack.toneWithSilences(4410, 4410, 4410), "type", 10, 10);
+			config.findTrim(0.01);
+			Assert.equalsNumber(config.trimStartDuration, 100, EPSILON, "Start trim found");
+			Assert.equalsNumber(config.trimEndDuration, 100, EPSILON, "End trim found");
+
+			// A threshold above the tone makes the track fully silent: trims are reset
+			config.findTrim(0.6);
+			Assert.equalsNumber(config.trimStartDuration, 0, EPSILON, "Start trim reset for a silent track");
+			Assert.equalsNumber(config.trimEndDuration, 0, EPSILON, "End trim reset for a silent track");
+		}
+
+		private function testSilentTracks():void
+		{
+			// Two blocks of the default sampling, then 30 seconds
+			for each (var samplesCount:int in [2 * TrackConfiguration.SAMPLING_MIN_VALUE, 30 * 44100])
+			{
+				var track:ProbeTrack = ProbeTrack.fromFunction(samplesCount, function(i:int):Number { return 0; });
+				var config:TrackConfiguration = new TrackConfiguration(track, "type");
+				Assert.equalsNumber(config.findStartTrimDuration(0.01), track.length, EPSILON, "Start trim of a silent track of " + samplesCount + " samples");
+				Assert.equalsNumber(config.findEndTrimDuration(0.01, track.length), track.length, EPSILON, "End trim of a silent track of " + samplesCount + " samples");
+			}
+
+			Assert.throws(ArgumentError, function():void
+			{
+				new TrackConfiguration(ProbeTrack.fromFunction(4410, function(i:int):Number { return 0; }), "type", -1, -1);
+			}, "Automatic trims of a silent track");
 		}
 
 		private function testClone():void

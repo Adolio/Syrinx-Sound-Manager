@@ -74,7 +74,7 @@ package ch.adolio.sound.test
 		{
 			var manager:SoundManager = new SoundManager();
 			var config:TrackConfiguration = manager.registerTrack("tone", ProbeTrack.toneWithSilences(4410, 4410, 4410), -1);
-			Assert.equalsNumber(config.trimStartDuration, 100, 0.05, "Negative start trim detected automatically");
+			Assert.equalsNumber(config.trimStartDuration, 100, EPSILON, "Negative start trim detected automatically");
 		}
 
 		private function testUnregistration():void

@@ -148,86 +148,83 @@ package ch.adolio.sound
 			return Math.round(time * SAMPLE_RATE_MS);
 		}
 
+		/**
+		 * Finds the duration of the silence at the start of the track, by reading blocks of <code>sampling</code> samples.
+		 *
+		 * @param silentThreshold Amplitude at or below which a sample is silent, on both channels
+		 * @param startPosition Position in milliseconds from which the silence is looked for
+		 * @return The duration in milliseconds from the start of the track to the first non-silent sample, or the track length when the track is silent from the start position
+		 */
 		public function findStartTrimDuration(silentThreshold:Number = 0.01, startPosition:Number = 0):Number
 		{
-			// End of the track reached
-			if (startPosition > _track.length)
-				return _track.length;
-
-			// Extract bytes
 			var readBytes:ByteArray = new ByteArray();
-			var samplesRead:Number = _track.extract(readBytes, _sampling, timeToSamples(startPosition));
-			readBytes.position = 0;
-
-			// Find first non-silent sample from begin to end
-			var nonSilentSampleFound:Boolean = false;
-			var samplesCount:int = 0;
-			const sampleSize:int = 8; // 2*4 bytes
-			while (readBytes.bytesAvailable >= sampleSize)
+			var blockStart:Number = Math.max(0, timeToSamples(startPosition)); // In samples
+			while (true)
 			{
-				// Get left & right float values
-				var l0:Number = readBytes.readFloat();
-				var r0:Number = readBytes.readFloat();
+				// Extract the next block
+				readBytes.clear();
+				var samplesRead:int = _track.extract(readBytes, _sampling, blockStart);
+				if (samplesRead <= 0)
+					break;
 
-				// Detect non-silence
-				if (Math.abs(l0) > silentThreshold || Math.abs(r0) > silentThreshold)
-					return startPosition + samplesToTime(samplesCount);
+				// Look for the first non-silent sample of the block
+				readBytes.position = 0;
+				for (var i:int = 0; i < samplesRead; ++i)
+				{
+					if (!isNextSampleSilent(readBytes, silentThreshold))
+						return samplesToTime(blockStart + i);
+				}
 
-				// Next sample
-				++samplesCount;
+				blockStart += samplesRead;
 			}
 
-			// Continue look-up...
-			return findStartTrimDuration(silentThreshold, startPosition + samplesToTime(samplesRead));
+			// Silent until the end
+			return _track.length;
 		}
 
+		/**
+		 * Finds the duration of the silence at the end of the track, by reading blocks of <code>sampling</code> samples backwards.
+		 *
+		 * @param silentThreshold Amplitude at or below which a sample is silent, on both channels
+		 * @param startPosition Position in milliseconds from which the silence is looked for, backwards (the track length to scan the whole track)
+		 * @return The duration in milliseconds from the end of the last non-silent sample to the end of the track, or the track length when the track is silent up to the start position
+		 */
 		public function findEndTrimDuration(silentThreshold:Number = 0.01, startPosition:Number = 0):Number
 		{
-			// Extract bytes from the end
 			var readBytes:ByteArray = new ByteArray();
-			var extractionPosition:Number = timeToSamples(startPosition) - _sampling;
-			var sampleToRead:uint = _sampling;
-
-			// Beginning of the track reached
-			var beginReached:Boolean = false;
-			if (extractionPosition < 0)
+			var blockEnd:Number = timeToSamples(startPosition); // In samples, excluded
+			while (blockEnd > 0)
 			{
-				sampleToRead = _sampling - Math.abs(extractionPosition);
-				extractionPosition = 0;
-				beginReached = true;
+				// Extract the previous block
+				var blockStart:Number = Math.max(0, blockEnd - _sampling);
+				readBytes.clear();
+				var samplesRead:int = _track.extract(readBytes, blockEnd - blockStart, blockStart);
+				if (samplesRead <= 0)
+					break;
+
+				// Look for the last non-silent sample of the block
+				for (var i:int = samplesRead - 1; i >= 0; --i)
+				{
+					readBytes.position = i * SAMPLE_SIZE;
+					if (!isNextSampleSilent(readBytes, silentThreshold))
+						return _track.length - samplesToTime(blockStart + i + 1);
+				}
+
+				blockEnd = blockStart;
 			}
 
-			// Read samples
-			var samplesRead:uint = _track.extract(readBytes, sampleToRead, extractionPosition);
-
-			// Find first non-silent sample from end to begin
-			var nonSilentSampleFound:Boolean = false;
-			var samplesCount:int = 0;
-			var nextSamplePosition:int = samplesRead - SAMPLE_SIZE;
-			while (nextSamplePosition >= 0)
-			{
-				// Move to the next sample position
-				readBytes.position = nextSamplePosition;
-
-				// Get left & right float values
-				var l0:Number = readBytes.readFloat(); // 4 bytes
-				var r0:Number = readBytes.readFloat(); // 4 bytes
-
-				// Detect silence
-				if (Math.abs(l0) > silentThreshold || Math.abs(r0) > silentThreshold)
-					return _track.length - (startPosition - samplesToTime(samplesCount));
-
-				// Next sample
-				++samplesCount;
-				nextSamplePosition = samplesRead - (samplesCount * SAMPLE_SIZE) - SAMPLE_SIZE;
-			}
-
-			// Continue look-up...
-			if (!beginReached)
-				return findEndTrimDuration(silentThreshold, startPosition - samplesToTime(samplesRead));
-
-			// Nothing found
+			// Silent from the start
 			return _track.length;
+		}
+
+		/**
+		 * Reads the stereo sample at the current position of the bytes & checks whether both its channels are silent.
+		 */
+		private static function isNextSampleSilent(bytes:ByteArray, silentThreshold:Number):Boolean
+		{
+			var left:Number = bytes.readFloat();
+			var right:Number = bytes.readFloat();
+			return Math.abs(left) <= silentThreshold && Math.abs(right) <= silentThreshold;
 		}
 
 		public function findTrim(silentThreshold:Number = 0.01):void
