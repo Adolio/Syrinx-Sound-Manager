@@ -232,6 +232,10 @@ or
 
 Don't forget to include dependencies (see below).
 
+## 🧪 Tests
+
+The `test` folder holds the automated tests of the library. See [test/README.md](test/README.md) to build & run them.
+
 ## ☝️ Limitations
 
 - Supported Wav formats:

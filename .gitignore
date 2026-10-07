@@ -2,3 +2,5 @@ bin/
 obj/
 demo/bin/
 demo/obj/
+test/bin/
+test/obj/

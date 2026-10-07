@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<application xmlns="http://ns.adobe.com/air/application/33.1">
+  <id>Syrinx-Sound-Manager-Test</id>
+  <versionLabel>0.6</versionLabel>
+  <versionNumber>0.6</versionNumber>
+  <filename>Syrinx-Sound-Manager-Test</filename>
+  <name>Syrinx-Sound-Manager-Test</name>
+  <architecture>64</architecture>
+  <initialWindow>
+    <title>Syrinx-Sound-Manager-Test</title>
+    <content>Syrinx-Sound-Manager-Test.swf</content>
+    <systemChrome>standard</systemChrome>
+    <transparent>false</transparent>
+    <visible>false</visible>
+  </initialWindow>
+  <supportedProfiles>desktop extendedDesktop</supportedProfiles>
+  <copyright>Copyright (c) 2019-2026 Aurelien Da Campo, All Rights Reserved.</copyright>
+</application>

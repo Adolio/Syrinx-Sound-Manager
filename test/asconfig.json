@@ -1,0 +1,22 @@
+{
+	"config": "air",
+	"mainClass": "ch.adolio.sound.test.TestMain",
+	"application": "application.xml",
+	"compilerOptions": {
+		"output": "bin/Syrinx-Sound-Manager-Test.swf",
+		"library-path": [
+			"../libs"
+		],
+		"source-path": [
+			"src",
+			"../src"
+		],
+		"swf-version": 44,
+		"default-background-color": "#000000",
+		"default-frame-rate": 60,
+		"default-size": {
+			"width": 800,
+			"height": 480
+		}
+	}
+}
