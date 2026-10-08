@@ -32,6 +32,9 @@ package ch.adolio.sound.test
 		/** Number of calls to <code>extract</code> from a position which is not a whole number of samples. */
 		public var fractionalExtractCount:int = 0;
 
+		/** Makes <code>extract</code> give no sample, whatever the position. */
+		public var isExtractionEmpty:Boolean = false;
+
 		/** Indicates whether <code>destroy</code> was called. */
 		public var isDestroyed:Boolean = false;
 
@@ -96,6 +99,9 @@ package ch.adolio.sound.test
 
 			if (startPosition != Math.floor(startPosition))
 				++fractionalExtractCount;
+
+			if (isExtractionEmpty)
+				return 0;
 
 			var start:int = startPosition < 0 ? 0 : int(startPosition);
 			var count:int = Math.max(0, Math.min(int(length), _left.length - start));

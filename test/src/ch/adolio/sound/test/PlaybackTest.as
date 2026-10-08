@@ -38,6 +38,7 @@ package ch.adolio.sound.test
 			testPositionChanges();
 			testStopAll();
 			testStandardSound();
+			testSoundsWithoutLength();
 		}
 
 		private function testPlayPauseResumeStop():void
@@ -188,6 +189,30 @@ package ch.adolio.sound.test
 			Assert.isFalse(si.isPlaying, "MP3 stopped");
 
 			manager.destroyAllSoundInstances();
+		}
+
+		private function testSoundsWithoutLength():void
+		{
+			var manager:SoundManager = createManager();
+			manager.registerTrack("trimmed", ProbeTrack.tone(1000), 400, 600);
+			manager.registerTrack("empty", new ProbeTrack(new Vector.<Number>()));
+
+			for each (var type:String in ["trimmed", "empty"])
+			{
+				for each (var loops:int in [0, 2, -1])
+				{
+					var context:String = "Type: " + type + ", loops: " + loops;
+					var completedCount:int = 0;
+					var si:SoundInstance = new SoundInstance(manager.findRegisteredTrack(type), manager);
+					si.completed.add(function(instance:SoundInstance):void { completedCount++; });
+					Assert.equalsNumber(si.length, 0, EPSILON, "No length. " + context);
+
+					si.play(1, 0, loops);
+					Assert.equalsInt(completedCount, 1, "Completed when played. " + context);
+					Assert.isTrue(si.isDestroyed, "Destroyed when played. " + context);
+					Assert.equalsInt(manager.getSoundInstancesCount(), 0, "Removed from the manager when played. " + context);
+				}
+			}
 		}
 
 		private function createManager():SoundManager

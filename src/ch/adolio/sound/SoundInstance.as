@@ -18,6 +18,7 @@ package ch.adolio.sound
 	import flash.media.SoundTransform;
 	import flash.utils.ByteArray;
 	import flash.utils.getTimer;
+	import flash.utils.setTimeout;
 	import org.osflash.signals.Signal;
 
 	/**
@@ -69,6 +70,8 @@ package ch.adolio.sound
 		private var _pitchExtractedData:ByteArray = new ByteArray();
 		private var _pitchStartPosition:Number = 0; // Position where the pitching started
 		private var _pitchStartTimer:int = 0; // Used to track past time in pitching mode, in milliseconds
+		private var _samplingId:uint = 0; // Identifies the sampling started by the last channel acquisition
+		private var _hasFedSamples:Boolean = false; // Indicates whether the current sampling fed samples
 
 		// Status
 		private var _isStarted:Boolean = false;
@@ -313,10 +316,16 @@ package ch.adolio.sound
 		private function onSampleData(e:SampleDataEvent):void
 		{
 			var samplesFed:Number = 0;
+			var isReadingFromStart:Boolean = false;
 			while (true)
 			{
 				// Extract samples & write them in the data output buffer
-				samplesFed += _extractionFunc(e.data, _samplingCount - samplesFed);
+				var samplesExtracted:Number = _extractionFunc(e.data, _samplingCount - samplesFed);
+				samplesFed += samplesExtracted;
+
+				// A track giving no sample from its start cannot be looped: restarting it again would never end
+				if (isReadingFromStart && samplesExtracted <= 0)
+					break;
 
 				// Still looping & reached the end of the track?
 				if ((_infiniteLooping || loopsRemaining > 0) && samplesFed < _samplingCount)
@@ -326,6 +335,7 @@ package ch.adolio.sound
 
 					// Reset the diamond
 					_readingTipPos = _startPosition;
+					isReadingFromStart = true;
 
 					// Continue reading...
 					continue;
@@ -334,6 +344,12 @@ package ch.adolio.sound
 				// Done
 				break;
 			}
+
+			// No sound complete event follows a sampling which never fed any sample: complete once the sampling is over
+			if (samplesFed > 0)
+				_hasFedSamples = true;
+			else if (!_hasFedSamples)
+				setTimeout(onSamplingEndedWithoutSample, 0, _samplingId);
 		}
 
 		/**
@@ -461,6 +477,13 @@ package ch.adolio.sound
 				_channel = null;
 			}
 
+			// A sound without length has nothing to play
+			if (length <= 0)
+			{
+				complete();
+				return this;
+			}
+
 			// Check for position validity
 			if (startTime < 0 || startTime > length)
 				throw new ArgumentError(LOG_PREFIX + " Invalid position. Start time must be in the following interval [0.." + length + "]. Start time: " + startTime);
@@ -495,6 +518,10 @@ package ch.adolio.sound
 				// Capacity check if Sound Manager available
 				if (manager == null || manager.getPlayingSoundInstancesCount() < manager.maxChannelCapacity)
 				{
+					// Start a new sampling
+					_hasFedSamples = false;
+					++_samplingId;
+
 					// Acquire a sound channel
 					if (_isStandardSound)
 						_channel = (_track as Mp3Track).sound.play(startTime, 0, _isMuted ? new SoundTransform(0) : _soundTransform);
@@ -1205,6 +1232,24 @@ package ch.adolio.sound
 		//---------------------------------------------------------------------
 		//-- Event handlers
 		//---------------------------------------------------------------------
+
+		/**
+		 * Completes a sound whose sampling fed no sample at all, as no sound complete event is dispatched for it.
+		 *
+		 * @param samplingId The sampling which fed no sample
+		 */
+		private function onSamplingEndedWithoutSample(samplingId:uint):void
+		{
+			// Stopped, paused, played again or destroyed in the meantime
+			if (_isDestroyed || _channel == null || samplingId != _samplingId)
+				return;
+
+			// Release the channel, which will never complete
+			stopChannel();
+			_channel = null;
+
+			complete();
+		}
 
 		/**
 		 * On sound complete.

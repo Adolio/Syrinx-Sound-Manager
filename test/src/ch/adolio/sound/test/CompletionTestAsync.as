@@ -13,6 +13,7 @@ package ch.adolio.sound.test
 	import ch.adolio.sound.SoundInstance;
 	import ch.adolio.sound.SoundInstancesPool;
 	import ch.adolio.sound.SoundManager;
+	import ch.adolio.sound.TrackConfiguration;
 	import ch.adolio.test.Assert;
 	import ch.adolio.test.ScenariosTestAsync;
 	import flash.utils.getTimer;
@@ -33,7 +34,9 @@ package ch.adolio.sound.test
 				testCompletionDestroysInstance,
 				testLoopsPlayedBeforeCompletion,
 				testCompletedInstanceKeptAlive,
-				testCompletionReleasesToPool];
+				testCompletionReleasesToPool,
+				testTrackEndingOnSamplingBoundaryCompletes,
+				testLoopingTrackWithoutSamplesCompletes];
 		}
 
 		private function testCompletionDestroysInstance(next:Function):void
@@ -107,6 +110,53 @@ package ch.adolio.sound.test
 					Assert.isFalse(si.isDestroyed, "Released instance not destroyed");
 					Assert.isNull(si.manager, "Released instance removed from the manager");
 					Assert.equalsInt(manager.getSoundInstancesCount(), 0, "Manager empty after release");
+					next();
+				});
+			});
+		}
+
+		private function testTrackEndingOnSamplingBoundaryCompletes(next:Function):void
+		{
+			// The last sampling request of such a track gets no sample
+			var track:ProbeTrack = ProbeTrack.toneWithSilences(0, 2 * TrackConfiguration.SAMPLING_MIN_VALUE, 0);
+			var manager:SoundManager = new SoundManager();
+			manager.volume = 0;
+			manager.registerTrack("two-blocks", track);
+
+			var completedCount:int = 0;
+			var si:SoundInstance = manager.play("two-blocks");
+			assertPlaying(si);
+			si.freeWhenCompleted = false;
+			si.completed.add(function(instance:SoundInstance):void
+			{
+				completedCount++;
+
+				// Leave the time for a second completion to occur
+				defer(function():void
+				{
+					Assert.equalsInt(completedCount, 1, "Completed once");
+
+					si.destroy();
+					next();
+				}, 200);
+			});
+		}
+
+		private function testLoopingTrackWithoutSamplesCompletes(next:Function):void
+		{
+			var track:ProbeTrack = ProbeTrack.tone(1000);
+			track.isExtractionEmpty = true;
+			var manager:SoundManager = new SoundManager();
+			manager.volume = 0;
+			manager.registerTrack("no-samples", track);
+
+			var si:SoundInstance = manager.play("no-samples", 1, 0, -1);
+			si.destroyed.add(function(instance:SoundInstance):void
+			{
+				defer(function():void
+				{
+					Assert.isTrue(track.extractCount > 0, "Samples requested from the track");
+					Assert.equalsInt(manager.getSoundInstancesCount(), 0, "Removed from the manager on completion");
 					next();
 				});
 			});
