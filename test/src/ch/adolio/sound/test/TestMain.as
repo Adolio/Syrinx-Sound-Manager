@@ -52,6 +52,7 @@ package ch.adolio.sound.test
 			// Asynchronous tests
 			_testsRunner.addTestAsync(new CompletionTestAsync());
 			_testsRunner.addTestAsync(new PitchTestAsync());
+			_testsRunner.addTestAsync(new PositionTestAsync());
 		}
 
 		private function printResults(testsResult:TestsResult):void

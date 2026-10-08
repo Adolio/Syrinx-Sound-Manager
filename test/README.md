@@ -22,6 +22,9 @@ The playback tests need a sound output device to acquire sound channels. Sounds 
 so the run is silent. An asynchronous test which does not report its result within 10 seconds fails. A run which
 never ends reveals a freeze of the application, which no timeout can report.
 
+`PositionTestAsync` compares positions with the elapsed time: it may fail on a machine too busy to play sounds in
+real time.
+
 ## Writing Tests
 
 - Prefer `ProbeTrack` over audio files: a synthetic track of generated samples (tone, silences or any function), whose
@@ -46,10 +49,11 @@ never ends reveals a freeze of the application, which no timeout can report.
 | `TrackRegistrationTest` | Registration & its signal, lookups, duplicate type rejected, automatic start trim at registration, unregistration & its signal (configuration destroyed, track kept), unregistered type played, max channel capacity |
 | `SoundInstanceTest` | Instances not played: registration to the manager & lookups, initial status, trimmed length, volume, base volume & mixed volume (with clamping), pan & mute, position & position ratio before start (with rejection of invalid values), manager change, destruction & destruction of all instances, null configuration rejected |
 | `PoolTest` | Acquisition, release (signals, stop, listeners cleared), recycling of the same type (pan, mute & pitch reset), other type not recycled, release of all instances, null & destroyed instances rejected, release refused while pooling is disabled |
-| `PlaybackTest` | Play, pause, resume & stop with their signals (custom sampled sound), loops & infinite looping setup, start from a later loop, negative start time rejected, position changes while playing & paused, stop all, standard MP3 sound (position change, pause & resume), sounds without length (fully trimmed or empty track) completed when played, with or without loops |
+| `PlaybackTest` | Play, pause, resume & stop with their signals (custom sampled sound), loops & infinite looping setup, start from a later loop, remaining time from a later loop, negative start time rejected, position changes while playing & paused, stop all, standard MP3 sound (position change, pause & resume), sounds without length (fully trimmed or empty track) completed when played, with or without loops |
 | `ChannelCapacityTest` | Max channel capacity reached: sounds with a finite number of loops skipped (completed, destroyed, kept alive or released to the pool) without piling up in the manager, infinitely looping sound put on hold at its start position, resumed only once a channel is available, paused finite sound skipped when resumed without channel |
 | `CompletionTestAsync` (async) | Completion destroying the instance, loops played before completion, instance kept alive (`freeWhenCompleted` disabled), completion releasing the instance to the pool, track ending on a sampling boundary completed once, looping track giving no sample completed |
 | `PitchTestAsync` (async) | Track read from whole sample positions only, while pitched & after the pitch is reset to its default, looping trimmed track read from its start trim up to its end trim only, with a pitch above & below the default |
+| `PositionTestAsync` (async) | Position of playing custom sampled sounds following what is heard: sound started from a later loop, samples fed far ahead of the playback (max sampling), pitched sound, position continuous when the pitch is set & reset on a looping sound, remaining time, pause keeping the loop heard |
 
 When fixing a bug, add a test reproducing it first.
 

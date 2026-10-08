@@ -115,6 +115,10 @@ package ch.adolio.sound.test
 			Assert.equalsInt(si.loopsRemaining, 1, "Loops remaining from the start time");
 			Assert.equalsNumber(si.totalLength, 4000, EPSILON, "Total length with 3 loops");
 
+			si.pause();
+			si.position = 2500;
+			Assert.equalsNumber(si.remainingTime, 1500, EPSILON, "Remaining time from the third loop");
+
 			si.play(1, 0, -1);
 			assertPlaying(si, "Played with infinite looping");
 			Assert.equalsInt(si.loops, -1, "Infinite loops");

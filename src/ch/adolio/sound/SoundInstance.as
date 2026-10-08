@@ -17,7 +17,6 @@ package ch.adolio.sound
 	import flash.media.SoundChannel;
 	import flash.media.SoundTransform;
 	import flash.utils.ByteArray;
-	import flash.utils.getTimer;
 	import flash.utils.setTimeout;
 	import org.osflash.signals.Signal;
 
@@ -68,8 +67,9 @@ package ch.adolio.sound
 		private var _startPosition:uint; // In samples
 		private var _endPosition:uint; // In samples
 		private var _pitchExtractedData:ByteArray = new ByteArray();
-		private var _pitchStartPosition:Number = 0; // Position where the pitching started
-		private var _pitchStartTimer:int = 0; // Used to track past time in pitching mode, in milliseconds
+		private var _channelStartTime:Number = 0; // Position reported by the channel when acquired, in milliseconds
+		private var _fedSamplesCount:Number = 0; // Samples fed to the channel since its acquisition
+		private var _readingSegments:Vector.<Number> = new Vector.<Number>(); // Fed samples count, total diamond position & pitch at the start of each reading segment
 		private var _samplingId:uint = 0; // Identifies the sampling started by the last channel acquisition
 		private var _hasFedSamples:Boolean = false; // Indicates whether the current sampling fed samples
 
@@ -217,6 +217,7 @@ package ch.adolio.sound
 			_channel = null;
 			_fakeSound = null;
 			_pitchExtractedData = null;
+			_readingSegments = null;
 			_extractionFunc = null;
 			started = null;
 			completed = null;
@@ -315,6 +316,10 @@ package ch.adolio.sound
 		 */
 		private function onSampleData(e:SampleDataEvent):void
 		{
+			// A pitch change starts a new reading segment
+			if (_readingSegments[_readingSegments.length - 1] != _pitch)
+				openReadingSegment();
+
 			var samplesFed:Number = 0;
 			var isReadingFromStart:Boolean = false;
 			while (true)
@@ -345,11 +350,41 @@ package ch.adolio.sound
 				break;
 			}
 
+			_fedSamplesCount += samplesFed;
+
 			// No sound complete event follows a sampling which never fed any sample: complete once the sampling is over
 			if (samplesFed > 0)
 				_hasFedSamples = true;
 			else if (!_hasFedSamples)
 				setTimeout(onSamplingEndedWithoutSample, 0, _samplingId);
+		}
+
+		/**
+		 * Starts a reading segment from the current diamond position & pitch, & forgets the segments which are fully played.
+		 *
+		 * <p>
+		 * Samples are fed ahead of the playback. Within a segment, the diamond moves by <code>pitch</code> samples per
+		 * sample fed: the position heard is found back from the number of samples played (see <code>position</code>).
+		 * </p>
+		 */
+		private function openReadingSegment():void
+		{
+			if (_channel)
+			{
+				var samplesPlayed:Number = (_channel.position - _channelStartTime) * SAMPLE_RATE_MS;
+				while (_readingSegments.length > 3 && _readingSegments[3] <= samplesPlayed)
+					_readingSegments.splice(0, 3);
+			}
+
+			_readingSegments.push(_fedSamplesCount, totalReadingTipPos, _pitch);
+		}
+
+		/**
+		 * Position of the diamond in the total length of the sound (loops included), in samples.
+		 */
+		private function get totalReadingTipPos():Number
+		{
+			return _currentLoop * (Number(_endPosition) - _startPosition) + (_readingTipPos - _startPosition);
 		}
 
 		/**
@@ -523,7 +558,6 @@ package ch.adolio.sound
 			if (!_isStandardSound)
 			{
 				_readingTipPos = _startPosition + int(startTime * SAMPLE_RATE_MS); // Setup the diamond
-				pitchStartPosition = positionInTotalLength; // Pitch setup in case pitch is set
 			}
 
 			// Acquire a channel if sound doesn't start paused
@@ -535,6 +569,10 @@ package ch.adolio.sound
 					// Start a new sampling
 					_hasFedSamples = false;
 					++_samplingId;
+					_channelStartTime = startTime;
+					_fedSamplesCount = 0;
+					_readingSegments.length = 0;
+					openReadingSegment();
 
 					// Acquire a sound channel
 					if (_isStandardSound)
@@ -666,8 +704,9 @@ package ch.adolio.sound
 			if (_channel == null)
 				return this;
 
-			// Pause
+			// Pause at the position heard: samples of a further loop may already be fed
 			_pauseTime = position;
+			setupLoopingPropertiesFromPosition(_pauseTime);
 			_isPaused = true;
 
 			// stop the channel
@@ -787,7 +826,7 @@ package ch.adolio.sound
 			if (_infiniteLooping)
 				return Number.POSITIVE_INFINITY;
 			else
-				return (length - position) + loopsRemaining * length;
+				return totalLength - position;
 		}
 
 		/**
@@ -857,12 +896,15 @@ package ch.adolio.sound
 			if (_isStandardSound)
 				return _channel.position + _standardSoundLoopPosition;
 
-			// When the pitch parameter is set, the past time is influenced by the pitch
-			if (_pitch != PITCH_DEFAULT)
-				return _pitchStartPosition + (getTimer() - _pitchStartTimer) * _pitch;
+			// Custom sampled sound: find the reading segment of the last sample played
+			var samplesPlayed:Number = Math.min((_channel.position - _channelStartTime) * SAMPLE_RATE_MS, _fedSamplesCount);
+			var segment:int = _readingSegments.length - 3;
+			while (segment > 0 && _readingSegments[segment] > samplesPlayed)
+				segment -= 3;
 
-			// Playing sound
-			return _channel.position;
+			// Move the diamond position of the segment start by the samples played since then
+			var positionInSamples:Number = _readingSegments[segment + 1] + (samplesPlayed - _readingSegments[segment]) * _readingSegments[segment + 2];
+			return Math.min(positionInSamples / SAMPLE_RATE_MS, totalLength);
 		}
 
 		/**
@@ -1035,12 +1077,6 @@ package ch.adolio.sound
 			if (_verbose)
 				trace(LOG_PREFIX + " Sound '" + _type + "#" + _id + "' pitch set to " + value + ".");
 
-			// Update pitch start position with the current position
-			if (_infiniteLooping)
-				pitchStartPosition = positionRatioInLoop;
-			else
-				pitchStartPosition = position;
-
 			// Update pitch
 			_pitch = value;
 
@@ -1062,18 +1098,6 @@ package ch.adolio.sound
 				setupLoopingPropertiesFromPosition(position);
 				playInternal(volume, position % length, isPaused);
 			}
-		}
-
-		/**
-		 * Used to update start pitching position & therefore reset the pitch start time
-		 */
-		private function set pitchStartPosition(position:Number):void
-		{
-			// Update position
-			_pitchStartPosition = position;
-
-			// Important: Reset real-time stopwatch
-			_pitchStartTimer = getTimer();
 		}
 
 		/**
