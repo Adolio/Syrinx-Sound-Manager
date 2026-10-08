@@ -27,22 +27,25 @@ so the run is silent. An asynchronous test which does not report its result with
   length is known to the sample & which records its extractions
 - Build WAVE files with `WavBuilder` to test the parsing of a given format
 - Set the master volume of the managers playing sounds to 0
+- Extend `ScenariosTestAsync` for an asynchronous test made of several scenarios: it runs them one after the other &
+  fails the test on any error raised through `attempt` or `defer`
 - `SoundInstancesPool.instance` is shared by all the tests: use track types unique to the scenario & compare the pool
   statistics with their values at the start of the scenario
-- Check the effects of a signal after its dispatch is over (see `defer` in `CompletionTestAsync`): the Sound Manager
+- Check the effects of a signal after its dispatch is over (see `defer` in `ScenariosTestAsync`): the Sound Manager
   reacts to the signals of its instances before the listeners of the test
 
 ## Coverage
 
 | Test | Covered behavior |
 |------|------------------|
-| `WavTrackTest` | Length & extracted samples of the supported formats (PCM 16 bits & IEEE float 32 bits, mono & stereo), with & without pre-decoding, extraction from a position & near the end, unknown chunk skipped, rejection of other sample rates, bit depths, channel counts & audio formats |
+| `WavTrackTest` | Length & extracted samples of the supported formats (PCM 16 bits & IEEE float 32 bits, mono & stereo), with & without pre-decoding, extraction from a position, from a position between two samples & near the end, unknown chunk skipped, rejection of other sample rates, bit depths, channel counts & audio formats |
 | `TrackConfigurationTest` | Defaults, sampling bounds, trims exceeding the length rejected, start & end trims detection exact to the sample (silences not aligned on the sampling, shorter than the sampling, below the threshold, isolated sample after a silence, max sampling, start position), automatic trims, `findTrim` (including a fully silent track), silent tracks without stack overflow (two blocks & 30 seconds), cloning (except the base volume), time to samples conversions, destruction |
 | `TrackRegistrationTest` | Registration & its signal, lookups, duplicate type rejected, automatic start trim at registration, unregistration & its signal (configuration destroyed, track kept), unregistered type played, max channel capacity |
 | `SoundInstanceTest` | Instances not played: registration to the manager & lookups, initial status, trimmed length, volume, base volume & mixed volume (with clamping), pan & mute, position & position ratio before start (with rejection of invalid values), manager change, destruction & destruction of all instances, null configuration rejected |
 | `PoolTest` | Acquisition, release (signals, stop, listeners cleared), recycling of the same type (pan, mute & pitch reset), other type not recycled, release of all instances, null & destroyed instances rejected, release refused while pooling is disabled |
 | `PlaybackTest` | Play, pause, resume & stop with their signals (custom sampled sound), loops & infinite looping setup, start from a later loop, negative start time rejected, position changes while playing & paused, stop all, standard MP3 sound (position change, pause & resume) |
 | `CompletionTestAsync` (async) | Completion destroying the instance, loops played before completion, instance kept alive (`freeWhenCompleted` disabled), completion releasing the instance to the pool |
+| `PitchTestAsync` (async) | Track read from whole sample positions only, while pitched & after the pitch is reset to its default |
 
 When fixing a bug, add a test reproducing it first.
 

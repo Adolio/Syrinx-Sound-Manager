@@ -994,6 +994,10 @@ package ch.adolio.sound
 			// Assign the right extraction function according to pitching value
 			_extractionFunc = _pitch == PITCH_DEFAULT ? feedSamples : feedPitchedSamples;
 
+			// Pitched feeding leaves the diamond between two samples, while tracks are read from whole samples
+			if (_pitch == PITCH_DEFAULT)
+				_readingTipPos = Math.floor(_readingTipPos);
+
 			// Leave standard sound
 			if (_isStandardSound && _pitch != PITCH_DEFAULT)
 			{

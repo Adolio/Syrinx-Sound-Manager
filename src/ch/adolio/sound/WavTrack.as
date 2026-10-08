@@ -294,7 +294,8 @@ package ch.adolio.sound
 
 		public override function extract(target:ByteArray, samplesToRead:Number, startPosition:Number = -1):Number
 		{
-			return _extractFunc(target, samplesToRead, startPosition);
+			// A position between two samples would start the reading in the middle of a sample
+			return _extractFunc(target, samplesToRead, Math.floor(startPosition));
 		}
 
 		public function extractPreDecoded(target:ByteArray, samplesToRead:Number, startPosition:Number = -1):Number

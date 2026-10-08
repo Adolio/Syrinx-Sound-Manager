@@ -14,34 +14,26 @@ package ch.adolio.sound.test
 	import ch.adolio.sound.SoundInstancesPool;
 	import ch.adolio.sound.SoundManager;
 	import ch.adolio.test.Assert;
-	import ch.adolio.test.ITestAsync;
+	import ch.adolio.test.ScenariosTestAsync;
 	import flash.utils.getTimer;
-	import flash.utils.setTimeout;
 
 	/**
 	 * Sounds played until their completion: destruction, loops, instances kept alive & release to the pool.
 	 *
-	 * Scenarios run one after the other. Each one plays a 100 ms synthetic track at a master volume of 0 & calls
-	 * <code>next</code> once its checks are done. Checks following a signal are deferred, so that they run once the
-	 * signal dispatch is over.
+	 * Each scenario plays a 100 ms synthetic track at a master volume of 0. Checks following a signal are deferred, so
+	 * that they run once the signal dispatch is over.
 	 */
-	public class CompletionTestAsync implements ITestAsync
+	public class CompletionTestAsync extends ScenariosTestAsync
 	{
 		private static const TRACK_DURATION:Number = 100; // In milliseconds
 
-		private var _onSuccess:Function;
-		private var _onFail:Function;
-
-		public function executeAsync(onSuccess:Function, onFail:Function):void
+		protected override function createScenarios():Array
 		{
-			_onSuccess = onSuccess;
-			_onFail = onFail;
-
-			runScenarios([
+			return [
 				testCompletionDestroysInstance,
 				testLoopsPlayedBeforeCompletion,
 				testCompletedInstanceKeptAlive,
-				testCompletionReleasesToPool]);
+				testCompletionReleasesToPool];
 		}
 
 		private function testCompletionDestroysInstance(next:Function):void
@@ -123,47 +115,6 @@ package ch.adolio.sound.test
 		//---------------------------------------------------------------------
 		//-- Helpers
 		//---------------------------------------------------------------------
-
-		/**
-		 * Runs the scenarios (<code>function(next:Function):void</code>) one after the other.
-		 */
-		private function runScenarios(scenarios:Array):void
-		{
-			if (scenarios.length == 0)
-			{
-				_onSuccess();
-				return;
-			}
-
-			var scenario:Function = scenarios.shift();
-			attempt(function():void
-			{
-				scenario(function():void { runScenarios(scenarios); });
-			});
-		}
-
-		/**
-		 * Runs a block & fails the test if it raises an error.
-		 */
-		private function attempt(block:Function):void
-		{
-			try
-			{
-				block();
-			}
-			catch (error:Error)
-			{
-				_onFail(error);
-			}
-		}
-
-		/**
-		 * Runs a block once the current call stack, including any signal dispatch in progress, is over.
-		 */
-		private function defer(block:Function):void
-		{
-			setTimeout(function():void { attempt(block); }, 0);
-		}
 
 		private function createManager(isPoolingEnabled:Boolean):SoundManager
 		{

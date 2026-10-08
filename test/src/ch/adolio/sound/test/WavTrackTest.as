@@ -33,6 +33,7 @@ package ch.adolio.sound.test
 			testFormats(false);
 			testFormats(true);
 			testExtractionFromPosition();
+			testExtractionFromFractionalPosition();
 			testExtractionNearEnd();
 			testUnknownChunkSkipped();
 			testUnsupportedFormatsRejected();
@@ -55,6 +56,21 @@ package ch.adolio.sound.test
 				var target:ByteArray = new ByteArray();
 				Assert.equalsInt(track.extract(target, 500, 1000), 500, "Samples extracted from position 1000");
 				assertExtractedSamples(target, 2, 1000, 500, FLOAT_EPSILON, "Extraction from position 1000, pre-decoding: " + predecode);
+			}
+		}
+
+		private function testExtractionFromFractionalPosition():void
+		{
+			for each (var predecode:Boolean in [false, true])
+			{
+				for each (var position:Number in [1000.3, 1000.5])
+				{
+					var context:String = "Extraction from position " + position + ", pre-decoding: " + predecode;
+					assertExtractionFromSample1000(1, WavBuilder.FORMAT_PCM, 16, predecode, position, PCM16_EPSILON, "PCM 16 bits mono. " + context);
+					assertExtractionFromSample1000(2, WavBuilder.FORMAT_PCM, 16, predecode, position, PCM16_EPSILON, "PCM 16 bits stereo. " + context);
+					assertExtractionFromSample1000(1, WavBuilder.FORMAT_IEEE_FLOAT, 32, predecode, position, FLOAT_EPSILON, "IEEE float 32 bits mono. " + context);
+					assertExtractionFromSample1000(2, WavBuilder.FORMAT_IEEE_FLOAT, 32, predecode, position, FLOAT_EPSILON, "IEEE float 32 bits stereo. " + context);
+				}
 			}
 		}
 
@@ -108,6 +124,17 @@ package ch.adolio.sound.test
 			assertExtractedSamples(target, channels, 0, SAMPLES_COUNT, epsilon, context);
 
 			track.destroy();
+		}
+
+		/**
+		 * Checks that an extraction from a position between the samples 1000 & 1001 starts on the sample 1000.
+		 */
+		private function assertExtractionFromSample1000(channels:int, audioFormat:int, bitsPerSample:int, predecode:Boolean, position:Number, epsilon:Number, context:String):void
+		{
+			var track:WavTrack = new WavTrack(buildFile(channels, audioFormat, bitsPerSample), predecode);
+			var target:ByteArray = new ByteArray();
+			Assert.equalsInt(track.extract(target, 500, position), 500, "Samples extracted. " + context);
+			assertExtractedSamples(target, channels, 1000, 500, epsilon, context);
 		}
 
 		private function assertRejected(channels:int, audioFormat:int, bitsPerSample:int, sampleRate:int, context:String):void

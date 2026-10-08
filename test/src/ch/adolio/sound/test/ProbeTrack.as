@@ -29,6 +29,9 @@ package ch.adolio.sound.test
 		/** Number of calls to <code>extract</code>. */
 		public var extractCount:int = 0;
 
+		/** Number of calls to <code>extract</code> from a position which is not a whole number of samples. */
+		public var fractionalExtractCount:int = 0;
+
 		/** Indicates whether <code>destroy</code> was called. */
 		public var isDestroyed:Boolean = false;
 
@@ -90,6 +93,9 @@ package ch.adolio.sound.test
 		public override function extract(target:ByteArray, length:Number, startPosition:Number = -1):Number
 		{
 			++extractCount;
+
+			if (startPosition != Math.floor(startPosition))
+				++fractionalExtractCount;
 
 			var start:int = startPosition < 0 ? 0 : int(startPosition);
 			var count:int = Math.max(0, Math.min(int(length), _left.length - start));
