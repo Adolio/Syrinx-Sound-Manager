@@ -215,6 +215,15 @@ _soundManager.releaseSoundInstanceToPool(mySound);
 
 **Important**: Never destroy `Sound Instances` when the pooling capability is active. This will break the objects recycling mechanism.
 
+### 🚦 Sound channels limit
+
+Adobe AIR plays at most 32 sounds at the same time, all `Sound Managers` together. A `Sound Manager` can be limited further with `maxChannelCapacity`.
+
+When a sound cannot get a sound channel:
+
+- A sound with a finite number of loops is skipped: it completes right away, as if it had been played until its end.
+- An infinitely looping sound is put on hold: it is paused at its start position & stays in its `Sound Manager`. Call `resume()` to try again; it stays paused as long as no sound channel is available.
+
 ### 💡 Recommendations
 
 - Standard sounds (MP3 Tracks without trimming neither pitching options set) are treated as normal flash sound (no custom data sampling required) which provides better overall performance over advanced sounds processing. Sampling rate is therefore ignored for those sounds.

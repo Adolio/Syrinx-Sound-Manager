@@ -542,8 +542,16 @@ package ch.adolio.sound
 					else
 						throw new IllegalOperationError(errorMessage);
 
-					// Put the sound in hold
+					// A sound which ends by itself is skipped: nothing would resume it
+					if (!_infiniteLooping)
+					{
+						complete();
+						return this;
+					}
+
+					// A sound looping forever is put on hold at the requested position, until it gets resumed
 					_isPaused = true;
+					_pauseTime = positionInTotalLength;
 				}
 				else
 				{
@@ -680,6 +688,10 @@ package ch.adolio.sound
 
 			// Beware: play can trigger completion right away & destruction in the time!
 			if (_isDestroyed)
+				return this;
+
+			// No channel available: the sound has been skipped or is still on hold
+			if (_channel == null)
 				return this;
 
 			// Debug
