@@ -12,6 +12,7 @@ package ch.adolio.sound.test
 {
 	import ch.adolio.sound.SoundInstance;
 	import ch.adolio.sound.SoundManager;
+	import ch.adolio.sound.TrackConfiguration;
 	import ch.adolio.test.Assert;
 	import ch.adolio.test.ScenariosTestAsync;
 
@@ -30,7 +31,10 @@ package ch.adolio.sound.test
 
 		protected override function createScenarios():Array
 		{
-			return [testWholeSamplePositionsAfterPitchReset];
+			return [
+				testWholeSamplePositionsAfterPitchReset,
+				testHighPitchedSoundReadWithinTrims,
+				testLowPitchedSoundReadWithinTrims];
 		}
 
 		private function testWholeSamplePositionsAfterPitchReset(next:Function):void
@@ -59,6 +63,45 @@ package ch.adolio.sound.test
 					next();
 				}, SAMPLING_DELAY);
 			}, SAMPLING_DELAY);
+		}
+
+		private function testHighPitchedSoundReadWithinTrims(next:Function):void
+		{
+			assertPitchedSoundReadWithinTrims(PITCH, next);
+		}
+
+		private function testLowPitchedSoundReadWithinTrims(next:Function):void
+		{
+			assertPitchedSoundReadWithinTrims(PITCH / 2, next);
+		}
+
+		/**
+		 * Plays a looping track of 1000 ms trimmed by 200 ms at its start & 300 ms at its end, long enough to loop at
+		 * least once, & checks which samples were read.
+		 */
+		private function assertPitchedSoundReadWithinTrims(pitch:Number, next:Function):void
+		{
+			var track:ProbeTrack = ProbeTrack.tone(1000);
+			var manager:SoundManager = new SoundManager();
+			manager.volume = 0;
+			var config:TrackConfiguration = manager.registerTrack("tone", track, 200, 300);
+			var firstSample:int = config.timeToSamples(200);
+			var lastSample:int = config.timeToSamples(700) - 1;
+
+			var si:SoundInstance = new SoundInstance(config, manager);
+			si.pitch = pitch;
+			si.play(1, 0, -1);
+			Assert.isTrue(si.isPlaying, "Not playing, a sound output device is required.");
+
+			defer(function():void
+			{
+				Assert.isTrue(si.currentLoop > 0, "Looped at least once. Pitch: " + pitch);
+				Assert.equalsInt(track.lowestExtractedSample, firstSample, "First sample read. Pitch: " + pitch);
+				Assert.equalsInt(track.highestExtractedSample, lastSample, "Last sample read. Pitch: " + pitch);
+
+				manager.destroyAllSoundInstances();
+				next();
+			}, si.length / pitch + SAMPLING_DELAY);
 		}
 	}
 }

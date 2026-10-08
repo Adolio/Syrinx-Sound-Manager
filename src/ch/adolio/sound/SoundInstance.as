@@ -381,28 +381,35 @@ package ch.adolio.sound
 		 */
 		private function feedPitchedSamples(data:ByteArray, samplesToFeed:uint):Number
 		{
-			// Reuse byte array instead of recreation
-			_pitchExtractedData.position = 0;
-
 			// Setup core variables
-			var scaledBlockSize:Number = samplesToFeed * _pitch;
 			var positionInt:int = _readingTipPos;
 			var alpha:Number = _readingTipPos - positionInt;
-			var positionTargetNum:Number = alpha;
-			var positionTargetInt:int = -1;
 
-			// Compute number of samples needed to process block (+2 for interpolation)
-			var samplesNeeded:int = Math.ceil(scaledBlockSize) + 2;
+			// End of the track reached
+			var samplesAvailable:Number = _endPosition - positionInt;
+			if (samplesAvailable <= 0)
+				return 0;
 
-			// Extract samples
+			// Compute number of samples needed to process block (+1 for interpolation), without crossing the end of the track
+			var samplesNeeded:int = Math.min(Math.ceil(alpha + samplesToFeed * _pitch) + 1, samplesAvailable);
+
+			// Extract samples (reuse byte array instead of recreation)
+			_pitchExtractedData.position = 0;
 			var samplesRead:int = _track.extract(_pitchExtractedData, samplesNeeded, positionInt);
-			var samplesToWrite:int = samplesRead == samplesNeeded ? samplesToFeed : samplesRead / _pitch;
+			if (samplesRead <= 0)
+				return 0;
+
+			// Only the samples whose reading position is within the extracted ones can be written
+			var samplesToWrite:int = Math.max(0, Math.min(samplesToFeed, Math.ceil((samplesRead - alpha) / _pitch)));
 
 			// For all samples required to be written
 			var l0:Number;
 			var r0:Number;
 			var l1:Number;
 			var r1:Number;
+			var lastSampleIndex:int = samplesRead - 1;
+			var positionTargetNum:Number = alpha;
+			var positionTargetInt:int = -1;
 			for (var i:int = 0 ; i < samplesToWrite ; ++i)
 			{
 				// Avoid reading equal samples, if rate < 1.0
@@ -416,24 +423,31 @@ package ch.adolio.sound
 					// Read two stereo samples for linear interpolation
 					l0 = _pitchExtractedData.readFloat();
 					r0 = _pitchExtractedData.readFloat();
-					l1 = _pitchExtractedData.readFloat();
-					r1 = _pitchExtractedData.readFloat();
+
+					// The last extracted sample has no following sample to interpolate with: it is held
+					if (positionTargetInt < lastSampleIndex)
+					{
+						l1 = _pitchExtractedData.readFloat();
+						r1 = _pitchExtractedData.readFloat();
+					}
+					else
+					{
+						l1 = l0;
+						r1 = r0;
+					}
 				}
 
 				// Write interpolated amplitude into the stream
+				alpha = positionTargetNum - positionTargetInt;
 				data.writeFloat(l0 + alpha * (l1 - l0));
 				data.writeFloat(r0 + alpha * (r1 - r0));
 
 				// Increase the target position
 				positionTargetNum += _pitch;
-
-				// Increase fraction and keep only the fractional part
-				alpha += _pitch;
-				alpha -= int(alpha);
 			}
 
 			// Update reading tip position
-			_readingTipPos += scaledBlockSize;
+			_readingTipPos += samplesToWrite * _pitch;
 
 			// Return number of written samples
 			return samplesToWrite;

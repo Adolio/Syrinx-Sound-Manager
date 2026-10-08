@@ -26,6 +26,8 @@ never ends reveals a freeze of the application, which no timeout can report.
 
 - Prefer `ProbeTrack` over audio files: a synthetic track of generated samples (tone, silences or any function), whose
   length is known to the sample & which records its extractions
+- The samples written by a playing sound cannot be read back: check what the sound reads from its `ProbeTrack` instead
+  (extractions count, positions between two samples, lowest & highest samples)
 - Build WAVE files with `WavBuilder` to test the parsing of a given format
 - Set the master volume of the managers playing sounds to 0
 - Extend `ScenariosTestAsync` for an asynchronous test made of several scenarios: it runs them one after the other &
@@ -47,7 +49,7 @@ never ends reveals a freeze of the application, which no timeout can report.
 | `PlaybackTest` | Play, pause, resume & stop with their signals (custom sampled sound), loops & infinite looping setup, start from a later loop, negative start time rejected, position changes while playing & paused, stop all, standard MP3 sound (position change, pause & resume), sounds without length (fully trimmed or empty track) completed when played, with or without loops |
 | `ChannelCapacityTest` | Max channel capacity reached: sounds with a finite number of loops skipped (completed, destroyed, kept alive or released to the pool) without piling up in the manager, infinitely looping sound put on hold at its start position, resumed only once a channel is available, paused finite sound skipped when resumed without channel |
 | `CompletionTestAsync` (async) | Completion destroying the instance, loops played before completion, instance kept alive (`freeWhenCompleted` disabled), completion releasing the instance to the pool, track ending on a sampling boundary completed once, looping track giving no sample completed |
-| `PitchTestAsync` (async) | Track read from whole sample positions only, while pitched & after the pitch is reset to its default |
+| `PitchTestAsync` (async) | Track read from whole sample positions only, while pitched & after the pitch is reset to its default, looping trimmed track read from its start trim up to its end trim only, with a pitch above & below the default |
 
 When fixing a bug, add a test reproducing it first.
 

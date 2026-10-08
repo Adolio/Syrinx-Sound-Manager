@@ -32,6 +32,12 @@ package ch.adolio.sound.test
 		/** Number of calls to <code>extract</code> from a position which is not a whole number of samples. */
 		public var fractionalExtractCount:int = 0;
 
+		/** Lowest sample extracted, -1 as long as no sample was extracted. */
+		public var lowestExtractedSample:int = -1;
+
+		/** Highest sample extracted, -1 as long as no sample was extracted. */
+		public var highestExtractedSample:int = -1;
+
 		/** Makes <code>extract</code> give no sample, whatever the position. */
 		public var isExtractionEmpty:Boolean = false;
 
@@ -109,6 +115,15 @@ package ch.adolio.sound.test
 			{
 				target.writeFloat(_left[start + i]);
 				target.writeFloat(_right[start + i]);
+			}
+
+			if (count > 0)
+			{
+				if (lowestExtractedSample < 0 || start < lowestExtractedSample)
+					lowestExtractedSample = start;
+
+				if (start + count - 1 > highestExtractedSample)
+					highestExtractedSample = start + count - 1;
 			}
 
 			return count;
