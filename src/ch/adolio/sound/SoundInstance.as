@@ -138,6 +138,7 @@ package ch.adolio.sound
 		{
 			// Setup fields from track configuration
 			setupFromTrackConfiguration(trackConfig);
+			setupCustomSamplingVars();
 
 			// Setup manager
 			this.manager = manager; // This will trigger sound manager registration
@@ -148,12 +149,20 @@ package ch.adolio.sound
 			// Remove from manager
 			manager = null;
 
-			// Reset internal status
+			// Reset options
+			_infiniteLooping = false;
 			_loops = 0;
-			_currentLoop = 0;
 			_isMuted = false;
-			_isPaused= false;
+			_volume = VOLUME_MAX;
 			_pitch = PITCH_DEFAULT;
+			_extractionFunc = feedSamples;
+			_freeWhenCompleted = true;
+			_verbose = false;
+
+			// Reset internal status
+			_currentLoop = 0;
+			_standardSoundLoopPosition = 0;
+			_isPaused = false;
 			_isStarted = false;
 			_pauseTime = 0;
 

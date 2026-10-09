@@ -19,7 +19,9 @@ package ch.adolio.sound.test
 	import flash.errors.IllegalOperationError;
 
 	/**
-	 * Sound instances pooling without playback: acquisition, release, recycling & statistics.
+	 * Sound instances pooling: acquisition, release, recycling & statistics.
+	 *
+	 * Managers have a master volume of 0: the sounds played by some scenarios are silent.
 	 *
 	 * The pool is a singleton shared by all the tests: each scenario uses its own track types & checks the statistics
 	 * relatively to their values at its start.
@@ -33,6 +35,8 @@ package ch.adolio.sound.test
 			testAcquisition();
 			testRelease();
 			testRecycling();
+			testRecycledInstanceOptionsReset();
+			testRecycledInstanceFollowsTrimChanges();
 			testReleaseAll();
 			testInvalidReleasesRejected();
 			testPoolingDisabled();
@@ -120,6 +124,47 @@ package ch.adolio.sound.test
 			Assert.isTrue(other.isFromPool, "Other instance from pool");
 		}
 
+		private function testRecycledInstanceOptionsReset():void
+		{
+			var pool:SoundInstancesPool = SoundInstancesPool.instance;
+			var manager:SoundManager = createManager();
+			var config:TrackConfiguration = registerTone(manager);
+			var si:SoundInstance = manager.play(config.type, 0.3, 0, -1);
+			si.freeWhenCompleted = false;
+			manager.releaseSoundInstanceToPool(si);
+
+			var recycled:SoundInstance = pool.acquireSound(config, manager);
+			Assert.isTrue(recycled == si, "Instance recycled");
+			Assert.isTrue(recycled.freeWhenCompleted, "Free when completed reset");
+			Assert.equalsNumber(recycled.volume, SoundInstance.VOLUME_MAX, 0.000001, "Volume reset");
+			Assert.equalsInt(recycled.loops, 0, "Loops reset");
+			Assert.equalsNumber(recycled.totalLength, recycled.length, 0.000001, "Total length without loops");
+
+			manager.releaseAllSoundInstancesToPool();
+		}
+
+		private function testRecycledInstanceFollowsTrimChanges():void
+		{
+			var pool:SoundInstancesPool = SoundInstancesPool.instance;
+			var manager:SoundManager = createManager();
+			var track:ProbeTrack = ProbeTrack.tone(1000);
+			var config:TrackConfiguration = manager.registerTrack("pool-test-" + (_typeCount++), track);
+			manager.releaseSoundInstanceToPool(pool.acquireSound(config, manager));
+
+			// Trims changed while the instance is in the pool
+			config.trimStartDuration = 200;
+			config.trimEndDuration = 300;
+
+			// Played 20 ms before its end: the first sampling request, made when played, reads up to the end trim
+			var si:SoundInstance = manager.play(config.type, 1, 480);
+			Assert.isTrue(si.isPlaying, "Not playing, a sound output device is required.");
+			Assert.equalsNumber(si.length, 500, 0.000001, "Trimmed length of the recycled instance");
+			Assert.equalsInt(track.lowestExtractedSample, config.timeToSamples(680), "First sample read by the recycled instance");
+			Assert.equalsInt(track.highestExtractedSample, config.timeToSamples(700) - 1, "Last sample read by the recycled instance");
+
+			manager.releaseAllSoundInstancesToPool();
+		}
+
 		private function testReleaseAll():void
 		{
 			var pool:SoundInstancesPool = SoundInstancesPool.instance;
@@ -161,6 +206,7 @@ package ch.adolio.sound.test
 		private function createManager():SoundManager
 		{
 			var manager:SoundManager = new SoundManager();
+			manager.volume = 0;
 			manager.isPoolingEnabled = true;
 			return manager;
 		}
