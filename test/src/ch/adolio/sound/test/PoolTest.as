@@ -40,6 +40,7 @@ package ch.adolio.sound.test
 			testReleaseAll();
 			testInvalidReleasesRejected();
 			testPoolingDisabled();
+			testPooledSoundCompletedAfterPoolingDisabled();
 		}
 
 		private function testAcquisition():void
@@ -201,6 +202,22 @@ package ch.adolio.sound.test
 			Assert.throws(IllegalOperationError, function():void { manager.releaseSoundInstanceToPool(si); }, "Release while pooling disabled");
 			Assert.throws(IllegalOperationError, function():void { manager.releaseAllSoundInstancesToPool(); }, "Release all while pooling disabled");
 			Assert.equalsInt(manager.getSoundInstancesCount(), 1, "Instance kept by the manager");
+		}
+
+		private function testPooledSoundCompletedAfterPoolingDisabled():void
+		{
+			// A sound without length completes as soon as it is played
+			var pool:SoundInstancesPool = SoundInstancesPool.instance;
+			var manager:SoundManager = createManager();
+			var config:TrackConfiguration = manager.registerTrack("pool-test-" + (_typeCount++), new ProbeTrack(new Vector.<Number>()));
+			var si:SoundInstance = pool.acquireSound(config, manager);
+			var capacity:uint = pool.capacity;
+
+			manager.isPoolingEnabled = false;
+			si.play();
+			Assert.isTrue(si.isDestroyed, "Pooled instance destroyed on completion once pooling is disabled");
+			Assert.equalsInt(pool.capacity, capacity, "Nothing released to the pool once pooling is disabled");
+			Assert.equalsInt(manager.getSoundInstancesCount(), 0, "Removed from the manager on completion");
 		}
 
 		private function createManager():SoundManager

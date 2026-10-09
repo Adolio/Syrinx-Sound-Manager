@@ -292,8 +292,8 @@ package ch.adolio.sound
 			// Destroy or release the sound instance if requested
 			if (si.freeWhenCompleted)
 			{
-				// Return to the pool if coming from it
-				if (si.fromPool)
+				// Return to the pool if coming from it, unless pooling got disabled in the meantime
+				if (si.fromPool && _isPoolingEnabled)
 					releaseSoundInstanceToPool(si);
 				else
 					si.destroy();
