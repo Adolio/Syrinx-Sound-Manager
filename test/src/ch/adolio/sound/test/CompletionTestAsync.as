@@ -32,6 +32,9 @@ package ch.adolio.sound.test
 		{
 			return [
 				testCompletionDestroysInstance,
+				testListenersCalledBeforeDestruction,
+				testListenersCalledBeforeReleaseToPool,
+				testInstancePlayedAgainByListenerKept,
 				testLoopsPlayedBeforeCompletion,
 				testCompletedInstanceKeptAlive,
 				testCompletionReleasesToPool,
@@ -53,6 +56,77 @@ package ch.adolio.sound.test
 					Assert.equalsInt(completedCount, 1, "Completed signal before destruction");
 					Assert.isTrue(si.isDestroyed, "Destroyed on completion");
 					Assert.equalsInt(manager.getSoundInstancesCount(), 0, "Removed from the manager on completion");
+					next();
+				});
+			});
+		}
+
+		private function testListenersCalledBeforeDestruction(next:Function):void
+		{
+			var manager:SoundManager = createManager(false);
+			var si:SoundInstance = manager.play("short");
+			assertPlaying(si);
+			si.completed.add(function(instance:SoundInstance):void
+			{
+				attempt(function():void
+				{
+					Assert.isFalse(si.isDestroyed, "Not destroyed yet for the completed listeners");
+					Assert.isTrue(si.manager == manager, "Still in its manager for the completed listeners");
+					Assert.isFalse(si.isPlaying, "Not playing for the completed listeners");
+					Assert.equalsNumber(si.length, TRACK_DURATION, 0.01, "Length readable by the completed listeners");
+				});
+
+				defer(function():void
+				{
+					Assert.isTrue(si.isDestroyed, "Destroyed once the completed listeners are called");
+					next();
+				});
+			});
+		}
+
+		private function testListenersCalledBeforeReleaseToPool(next:Function):void
+		{
+			var pool:SoundInstancesPool = SoundInstancesPool.instance;
+			var manager:SoundManager = createManager(true);
+			var si:SoundInstance = manager.play("short");
+			assertPlaying(si);
+			var capacity:uint = pool.capacity;
+			si.completed.add(function(instance:SoundInstance):void
+			{
+				attempt(function():void
+				{
+					Assert.equalsInt(pool.capacity, capacity, "Not released yet for the completed listeners");
+					Assert.isTrue(si.manager == manager, "Still in its manager for the completed listeners");
+				});
+
+				defer(function():void
+				{
+					Assert.equalsInt(pool.capacity, capacity + 1, "Released once the completed listeners are called");
+					Assert.isNull(si.manager, "Removed from its manager once released");
+					next();
+				});
+			});
+		}
+
+		private function testInstancePlayedAgainByListenerKept(next:Function):void
+		{
+			var manager:SoundManager = createManager(false);
+			var si:SoundInstance = manager.play("short");
+			assertPlaying(si);
+			si.completed.addOnce(function(instance:SoundInstance):void
+			{
+				attempt(function():void
+				{
+					si.play();
+				});
+
+				defer(function():void
+				{
+					Assert.isFalse(si.isDestroyed, "Not destroyed when played again by a completed listener");
+					Assert.isTrue(si.isPlaying, "Playing again");
+					Assert.equalsInt(manager.getSoundInstancesCount(), 1, "Kept by its manager when played again");
+
+					manager.destroyAllSoundInstances();
 					next();
 				});
 			});
@@ -87,6 +161,10 @@ package ch.adolio.sound.test
 				defer(function():void
 				{
 					Assert.isFalse(si.isDestroyed, "Kept alive on completion");
+					Assert.isFalse(si.isPlaying, "Not playing once completed");
+					Assert.isFalse(si.isStarted, "Not started once completed");
+					Assert.isFalse(si.isPaused, "Not paused once completed");
+					Assert.equalsNumber(si.position, si.totalLength, 0.01, "Position at the end once completed");
 					Assert.isNull(si.manager, "Removed from the manager on completion");
 					Assert.equalsInt(manager.getSoundInstancesCount(), 0, "Manager empty on completion");
 

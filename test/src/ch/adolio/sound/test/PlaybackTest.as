@@ -37,8 +37,10 @@ package ch.adolio.sound.test
 			testLoopsSetup();
 			testPositionChanges();
 			testStopAll();
+			testStopAllWithListenersFreeingInstances();
 			testStandardSound();
 			testSoundsWithoutLength();
+			testCompletedListenersCalledBeforeFreeing();
 		}
 
 		private function testPlayPauseResumeStop():void
@@ -193,6 +195,50 @@ package ch.adolio.sound.test
 			Assert.isFalse(si.isPlaying, "MP3 stopped");
 
 			manager.destroyAllSoundInstances();
+		}
+
+		private function testStopAllWithListenersFreeingInstances():void
+		{
+			var manager:SoundManager = createManager();
+			manager.registerTrack("tone", ProbeTrack.tone(1000));
+			var si1:SoundInstance = manager.play("tone");
+			var si2:SoundInstance = manager.play("tone");
+			var si3:SoundInstance = manager.play("tone");
+			si1.stopped.add(function(instance:SoundInstance):void
+			{
+				si1.destroy();
+				si2.destroy();
+			});
+
+			manager.stopAll();
+			Assert.isTrue(si1.isDestroyed, "First instance destroyed by its listener");
+			Assert.isTrue(si2.isDestroyed, "Second instance destroyed by the listener of the first one");
+			Assert.isFalse(si3.isStarted, "Third instance stopped");
+			Assert.equalsInt(manager.getSoundInstancesCount(), 1, "Third instance kept by the manager");
+
+			manager.destroyAllSoundInstances();
+		}
+
+		private function testCompletedListenersCalledBeforeFreeing():void
+		{
+			// A sound without length completes as soon as it is played
+			var manager:SoundManager = createManager();
+			manager.registerTrack("empty", new ProbeTrack(new Vector.<Number>()));
+			var si:SoundInstance = new SoundInstance(manager.findRegisteredTrack("empty"), manager);
+
+			var wasDestroyed:Boolean = true;
+			var listenerManager:SoundManager = null;
+			si.completed.add(function(instance:SoundInstance):void
+			{
+				wasDestroyed = si.isDestroyed;
+				listenerManager = si.manager;
+			});
+
+			si.play();
+			Assert.isFalse(wasDestroyed, "Not destroyed yet for the completed listeners");
+			Assert.isTrue(listenerManager == manager, "Still in its manager for the completed listeners");
+			Assert.isTrue(si.isDestroyed, "Destroyed once the completed listeners are called");
+			Assert.equalsInt(manager.getSoundInstancesCount(), 0, "Removed from the manager");
 		}
 
 		private function testSoundsWithoutLength():void

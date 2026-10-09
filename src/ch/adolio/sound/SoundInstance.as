@@ -664,8 +664,22 @@ package ch.adolio.sound
 			if (_verbose)
 				trace(LOG_PREFIX + " Sound '" + _type + "#" + _id + "' complete.");
 
+			// The sound is over
+			if (_channel)
+			{
+				stopChannel();
+				_channel = null;
+			}
+
+			_isStarted = false;
+			_isPaused = false;
+
 			// Dispatch completion event
 			completed.dispatch(this);
+
+			// Let the manager free the instance, unless a listener already freed it or played it again
+			if (!_isDestroyed && !_isStarted && _manager)
+				_manager.onSoundInstanceCompleted(this);
 		}
 
 		/**
@@ -1294,10 +1308,6 @@ package ch.adolio.sound
 			if (_isDestroyed || _channel == null || samplingId != _samplingId)
 				return;
 
-			// Release the channel, which will never complete
-			stopChannel();
-			_channel = null;
-
 			complete();
 		}
 
@@ -1332,6 +1342,10 @@ package ch.adolio.sound
 					return;
 				}
 			}
+
+			// A custom sampled sound ends on its last sample
+			if (!_isStandardSound && !_infiniteLooping)
+				_pauseTime = totalLength;
 
 			// Complete the sound
 			complete();

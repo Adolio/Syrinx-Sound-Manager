@@ -144,9 +144,13 @@ package ch.adolio.sound
 		 */
 		public function stopAll():void
 		{
-			var length:int = _soundInstances.length;
-			for (var i:int = 0; i < length; ++i)
-				_soundInstances[i].stop();
+			// Listeners of the stopped signal may remove instances: iterate over a copy
+			var instances:Vector.<SoundInstance> = _soundInstances.concat();
+			for each (var si:SoundInstance in instances)
+			{
+				if (si.manager == this)
+					si.stop();
+			}
 		}
 
 		/**
@@ -275,13 +279,15 @@ package ch.adolio.sound
 			}
 		}
 
-		private function onSoundCompleted(si:SoundInstance):void
+		/**
+		 * Removes a completed sound instance, then destroys or releases it if requested.
+		 *
+		 * Called by the sound instance once its completed signal is dispatched.
+		 */
+		internal function onSoundInstanceCompleted(si:SoundInstance):void
 		{
 			// Remove sound instance
-			if (si.manager == this)
-				si.manager = null; // This will automatically trigger the unregistration
-			else
-				trace(LOG_PREFIX + " There is a Sound Manager inconsistency.");
+			si.manager = null; // This will automatically trigger the unregistration
 
 			// Destroy or release the sound instance if requested
 			if (si.freeWhenCompleted)
@@ -318,11 +324,10 @@ package ch.adolio.sound
 			var index:int = _soundInstances.indexOf(si);
 			if (index != -1)
 			{
-				// Stop listening to sound completion
+				// Stop listening to sound destruction
 				if (!si.isDestroyed)
 				{
 					si.destroyed.remove(onSoundDestroyed);
-					si.completed.remove(onSoundCompleted);
 				}
 
 				// Remove from instances
@@ -353,8 +358,7 @@ package ch.adolio.sound
 			// Add the instance
 			_soundInstances.push(si);
 
-			// Listen to sound events
-			si.completed.add(onSoundCompleted);
+			// Listen to sound destruction
 			si.destroyed.add(onSoundDestroyed);
 
 			// Update (mixed) volume
