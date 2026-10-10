@@ -77,6 +77,7 @@ package ch.adolio.sound
 		{
 			var clone:TrackConfiguration = new TrackConfiguration(_track, _type, _trimStartDuration, _trimEndDuration);
 			clone.sampling = _sampling;
+			clone.baseVolume = _baseVolume;
 			return clone;
 		}
 
@@ -132,7 +133,7 @@ package ch.adolio.sound
 
 			// Check for invalid trimming values
 			if (_trimStartDuration + value > _track.length)
-				throw new ArgumentError("[Track Configuration] Invalid trimming duration. Start + end trimming durations cannot be greater than the sound length. Sound length: " + _track.length + ", Trimming length: " + (value + _trimEndDuration));
+				throw new ArgumentError("[Track Configuration] Invalid trimming duration. Start + end trimming durations cannot be greater than the sound length. Sound length: " + _track.length + ", Trimming length: " + (_trimStartDuration + value));
 
 			// Update trimming
 			_trimEndDuration = value;

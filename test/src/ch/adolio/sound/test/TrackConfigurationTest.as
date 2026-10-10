@@ -28,6 +28,7 @@ package ch.adolio.sound.test
 			testDefaults();
 			testSamplingBounds();
 			testTrimValidation();
+			testTrimErrorsReportTotalTrimming();
 			testStartTrimDetection();
 			testEndTrimDetection();
 			testAutomaticTrims();
@@ -84,6 +85,29 @@ package ch.adolio.sound.test
 			{
 				new TrackConfiguration(ProbeTrack.tone(1000), "type", 600, 600);
 			}, "Trims exceeding the length in constructor");
+		}
+
+		private function testTrimErrorsReportTotalTrimming():void
+		{
+			// The rejected value added to the other trim: 800 + 400, then 300 + 800
+			var config:TrackConfiguration = new TrackConfiguration(ProbeTrack.tone(1000), "type", 300, 400);
+			assertTrimErrorReports(function():void { config.trimStartDuration = 800; }, 1200, "Start trim");
+			assertTrimErrorReports(function():void { config.trimEndDuration = 800; }, 1100, "End trim");
+		}
+
+		private function assertTrimErrorReports(block:Function, trimmingLength:Number, context:String):void
+		{
+			var message:String = "";
+			try
+			{
+				block();
+			}
+			catch (error:ArgumentError)
+			{
+				message = error.message;
+			}
+
+			Assert.isTrue(message.indexOf("Trimming length: " + trimmingLength) != -1, context + " error reporting a trimming of " + trimmingLength + ". Message: " + message);
 		}
 
 		private function testStartTrimDetection():void
@@ -192,6 +216,7 @@ package ch.adolio.sound.test
 		private function testClone():void
 		{
 			var config:TrackConfiguration = new TrackConfiguration(ProbeTrack.tone(1000), "type", 100, 200, 4096);
+			config.baseVolume = 0.4;
 			var clone:TrackConfiguration = config.clone();
 			Assert.isFalse(clone == config, "Clone is a new object");
 			Assert.isTrue(clone.track == config.track, "Cloned track");
@@ -199,6 +224,7 @@ package ch.adolio.sound.test
 			Assert.equalsNumber(clone.trimStartDuration, 100, EPSILON, "Cloned start trim");
 			Assert.equalsNumber(clone.trimEndDuration, 200, EPSILON, "Cloned end trim");
 			Assert.equalsInt(clone.sampling, 4096, "Cloned sampling");
+			Assert.equalsNumber(clone.baseVolume, 0.4, EPSILON, "Cloned base volume");
 		}
 
 		private function testTimeConversions():void
