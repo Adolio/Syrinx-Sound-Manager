@@ -41,6 +41,9 @@ package ch.adolio.sound
 		private var _volume:Number = 1.0;
 		private var _isPoolingEnabled:Boolean = false;
 
+		// Status
+		private var _isDestroyed:Boolean = false;
+
 		// Signals
 		public var trackRegistered:Signal = new Signal(TrackConfiguration);
 		public var trackUnregistered:Signal = new Signal(TrackConfiguration);
@@ -55,6 +58,60 @@ package ch.adolio.sound
 		{
 			_managers[this] = true;
 			_isChannelsAllocationChecked = false;
+		}
+
+		/**
+		 * Destroy the Sound Manager. After this operation, the object should not be accessed anymore.
+		 *
+		 * <p>
+		 * Its sound instances are released to the pool if they are coming from it, destroyed otherwise, & its tracks
+		 * are unregistered: the tracks themselves are not destroyed. The related signals are dispatched, then all the
+		 * signals are cleared.
+		 * </p>
+		 */
+		public function destroy():void
+		{
+			// Cannot destroy twice
+			if (_isDestroyed)
+				return;
+
+			// Mark object as destroyed
+			_isDestroyed = true;
+
+			// Free sound instances: freeing one removes it from the list
+			while (_soundInstances.length > 0)
+			{
+				var si:SoundInstance = _soundInstances[0];
+				freeSoundInstance(si);
+
+				if (_soundInstances.length > 0 && _soundInstances[0] == si)
+					_soundInstances.shift();
+			}
+
+			// Unregister tracks
+			for each (var trackConfig:TrackConfiguration in getRegisteredTracks())
+				unregisterTrack(trackConfig.type);
+
+			// Clear signals
+			trackRegistered.removeAll();
+			trackUnregistered.removeAll();
+			soundInstanceAdded.removeAll();
+			soundInstanceRemoved.removeAll();
+			soundInstanceReleasedToPool.removeAll();
+
+			// Stop counting its max channel capacity
+			delete _managers[this];
+			_isChannelsAllocationChecked = false;
+		}
+
+		/**
+		 * Indicates whether this Sound Manager is destroyed.
+		 *
+		 * A destroyed Sound Manager should not be accessed anymore.
+		 */
+		public function get isDestroyed():Boolean
+		{
+			return _isDestroyed;
 		}
 
 		//---------------------------------------------------------------------

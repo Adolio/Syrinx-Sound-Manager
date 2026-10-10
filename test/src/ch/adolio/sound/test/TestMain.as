@@ -49,6 +49,7 @@ package ch.adolio.sound.test
 			_testsRunner.addTest(new PlaybackTest());
 			_testsRunner.addTest(new ChannelCapacityTest());
 			_testsRunner.addTest(new ValidationTest());
+			_testsRunner.addTest(new SoundManagerDestructionTest());
 
 			// Asynchronous tests
 			_testsRunner.addTestAsync(new CompletionTestAsync());

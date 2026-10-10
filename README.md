@@ -45,6 +45,7 @@ Go to the [demo](./demo/) folder, configure the project & run it or if you get t
 		- Stop all sound instances
 		- Destroy all sound instances
 		- Max channel capacity
+	- Destruction (frees its sound instances & unregisters its tracks)
 	- Events
 		- Track registered
 		- Track unregistered
@@ -230,6 +231,12 @@ _fxSoundManager.maxChannelCapacity = 24;
 ```
 
 A warning is traced when the capacities of the `Sound Managers` add up to more than 32. `SoundManager.totalMaxChannelCapacity` returns their sum.
+
+A `Sound Manager` which is no longer needed must be destroyed, so that its capacity is no longer counted:
+
+```actionscript
+_soundManager.destroy(); // Frees its sound instances & unregisters its tracks
+```
 
 When a sound cannot get a sound channel:
 
