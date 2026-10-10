@@ -38,6 +38,10 @@ package ch.adolio.sound.test
 			testRecycledInstanceOptionsReset();
 			testRecycledInstanceFollowsTrimChanges();
 			testReleaseAll();
+			testSecondReleaseIgnored();
+			testRecyclingMatchesTrack();
+			testUnregisteredTrackInstancesDropped();
+			testPooledInstanceDestroyed();
 			testInvalidReleasesRejected();
 			testPoolingDisabled();
 			testPooledSoundCompletedAfterPoolingDisabled();
@@ -178,6 +182,94 @@ package ch.adolio.sound.test
 			manager.releaseAllSoundInstancesToPool();
 			Assert.equalsInt(manager.getSoundInstancesCount(), 0, "All instances removed from the manager");
 			Assert.equalsInt(pool.capacity, capacity + 3, "All instances released to the pool");
+		}
+
+		private function testSecondReleaseIgnored():void
+		{
+			var pool:SoundInstancesPool = SoundInstancesPool.instance;
+			var manager:SoundManager = createManager();
+			var config:TrackConfiguration = registerTone(manager);
+			var si:SoundInstance = pool.acquireSound(config, manager);
+			var capacity:uint = pool.capacity;
+			var releaseCount:uint = pool.releaseCount;
+			var releasedToPool:int = 0;
+			manager.soundInstanceReleasedToPool.add(function(instance:SoundInstance, releasePool:SoundInstancesPool):void { releasedToPool++; });
+
+			manager.releaseSoundInstanceToPool(si);
+			manager.releaseSoundInstanceToPool(si);
+			pool.releaseSound(si);
+			Assert.equalsInt(pool.capacity, capacity + 1, "Instance pooled once");
+			Assert.equalsInt(pool.releaseCount, releaseCount + 1, "Release counted once");
+			Assert.equalsInt(releasedToPool, 1, "Sound instance released to pool signal dispatched once");
+
+			// A single acquisition gets the instance
+			var first:SoundInstance = pool.acquireSound(config, manager);
+			var second:SoundInstance = pool.acquireSound(config, manager);
+			Assert.isTrue(first == si, "Instance recycled by the first acquisition");
+			Assert.isFalse(second == si, "Instance not given to a second acquisition");
+
+			manager.releaseAllSoundInstancesToPool();
+		}
+
+		private function testRecyclingMatchesTrack():void
+		{
+			var pool:SoundInstancesPool = SoundInstancesPool.instance;
+			var type:String = "pool-test-" + (_typeCount++);
+
+			// Two managers using the same type for different tracks
+			var manager1:SoundManager = createManager();
+			var manager2:SoundManager = createManager();
+			var config1:TrackConfiguration = manager1.registerTrack(type, ProbeTrack.tone(1000));
+			var config2:TrackConfiguration = manager2.registerTrack(type, ProbeTrack.tone(500));
+
+			var si:SoundInstance = pool.acquireSound(config1, manager1);
+			manager1.releaseSoundInstanceToPool(si);
+
+			var other:SoundInstance = pool.acquireSound(config2, manager2);
+			Assert.isFalse(other == si, "Instance of another track not recycled");
+			Assert.equalsNumber(other.length, 500, 0.000001, "Length of the track of its own manager");
+
+			var recycled:SoundInstance = pool.acquireSound(config1, manager1);
+			Assert.isTrue(recycled == si, "Instance of the same track recycled");
+
+			manager1.releaseAllSoundInstancesToPool();
+			manager2.releaseAllSoundInstancesToPool();
+		}
+
+		private function testUnregisteredTrackInstancesDropped():void
+		{
+			var pool:SoundInstancesPool = SoundInstancesPool.instance;
+			var manager:SoundManager = createManager();
+			var config:TrackConfiguration = registerTone(manager);
+			var si1:SoundInstance = pool.acquireSound(config, manager);
+			var si2:SoundInstance = pool.acquireSound(config, manager);
+			var capacity:uint = pool.capacity;
+			manager.releaseAllSoundInstancesToPool();
+			Assert.equalsInt(pool.capacity, capacity + 2, "Instances pooled");
+
+			manager.unregisterTrack(config.type);
+			Assert.equalsInt(pool.capacity, capacity, "Pooled instances of the unregistered track dropped");
+			Assert.isTrue(si1.isDestroyed, "First pooled instance destroyed");
+			Assert.isTrue(si2.isDestroyed, "Second pooled instance destroyed");
+		}
+
+		private function testPooledInstanceDestroyed():void
+		{
+			var pool:SoundInstancesPool = SoundInstancesPool.instance;
+			var manager:SoundManager = createManager();
+			var config:TrackConfiguration = registerTone(manager);
+			var si:SoundInstance = pool.acquireSound(config, manager);
+			manager.releaseSoundInstanceToPool(si);
+			var capacity:uint = pool.capacity;
+
+			si.destroy();
+			Assert.equalsInt(pool.capacity, capacity - 1, "Destroyed instance removed from the pool");
+
+			var other:SoundInstance = pool.acquireSound(config, manager);
+			Assert.isFalse(other == si, "Destroyed instance not recycled");
+			Assert.isFalse(other.isDestroyed, "New instance acquired");
+
+			manager.releaseAllSoundInstancesToPool();
 		}
 
 		private function testInvalidReleasesRejected():void

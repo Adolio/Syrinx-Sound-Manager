@@ -53,6 +53,7 @@ package ch.adolio.sound
 		private var _volume:Number = VOLUME_MAX; // instance volume, not mixed
 		private var _pitch:Number = PITCH_DEFAULT;
 		private var _isFromPool:Boolean = false;
+		private var _isInPool:Boolean = false;
 		private var _freeWhenCompleted:Boolean = true; // Automatically destroy or release the instance when completed
 
 		// Triming
@@ -205,6 +206,10 @@ package ch.adolio.sound
 			// Cannot destroy twice
 			if (_isDestroyed)
 				return;
+
+			// Leave the pool
+			if (_isInPool)
+				SoundInstancesPool.instance.removeSound(this);
 
 			// Mark object as destroyed
 			_isDestroyed = true;
@@ -1224,6 +1229,27 @@ package ch.adolio.sound
 		internal function set fromPool(value:Boolean):void
 		{
 			_isFromPool = value;
+		}
+
+		/**
+		 * Is the sound instance currently in the pool, waiting to be acquired?
+		 */
+		internal function get isInPool():Boolean
+		{
+			return _isInPool;
+		}
+
+		internal function set isInPool(value:Boolean):void
+		{
+			_isInPool = value;
+		}
+
+		/**
+		 * Track read by the sound instance.
+		 */
+		internal function get track():Track
+		{
+			return _track;
 		}
 
 		/**

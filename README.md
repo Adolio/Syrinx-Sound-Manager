@@ -213,7 +213,9 @@ Infinite looping sounds (e.g. seamless looping sounds) can be manually returned 
 _soundManager.releaseSoundInstanceToPool(mySound);
 ```
 
-**Important**: Never destroy `Sound Instances` when the pooling capability is active. This will break the objects recycling mechanism.
+**Important**: Release `Sound Instances` instead of destroying them when the pooling capability is active. A destroyed `Sound Instance` is never recycled.
+
+Releasing a `Sound Instance` which is already in the pool is ignored.
 
 ### 🚦 Sound channels limit
 

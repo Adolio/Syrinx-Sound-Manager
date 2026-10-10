@@ -216,14 +216,18 @@ package ch.adolio.sound
 			if (!hasTrackRegistered(type))
 				return;
 
-			// Keep a reference of the config before deleting it
+			// Keep a reference of the config & its track before deleting it
 			var trackConfig:TrackConfiguration = _tracksByType[type];
+			var track:Track = trackConfig.track;
 
 			// Delete entry
 			delete _tracksByType[type];
 
 			// Destroy the configuration
 			trackConfig.destroy();
+
+			// Drop the pooled sound instances which still hold the track
+			SoundInstancesPool.instance.destroySoundsOfTrack(track);
 
 			// Emit event
 			trackUnregistered.dispatch(trackConfig);
@@ -392,8 +396,8 @@ package ch.adolio.sound
 			if (!_isPoolingEnabled)
 				throw new IllegalOperationError("Pooling is not enabled.");
 
-			SoundInstancesPool.instance.releaseSound(sound);
-			soundInstanceReleasedToPool.dispatch(sound, SoundInstancesPool.instance);
+			if (SoundInstancesPool.instance.releaseSound(sound))
+				soundInstanceReleasedToPool.dispatch(sound, SoundInstancesPool.instance);
 		}
 
 		/**

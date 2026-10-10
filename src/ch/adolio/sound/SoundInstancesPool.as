@@ -63,15 +63,19 @@ package ch.adolio.sound
 			for (var i:int = 0; i < soundCount; ++i)
 			{
 				sound = _pool[i];
-				if (sound.type == trackConfig.type)
+
+				// The same type may be registered for another track, by another manager or after an unregistration
+				if (sound.type == trackConfig.type && sound.track == trackConfig.track)
 				{
 					++_savedCount;
 
 					if (_verbose)
 						trace(LOG_PREFIX + " Sound Instance acquired from pool. Saved instantiations: " + _savedCount);
 
+					_pool.removeAt(i);
+					sound.isInPool = false;
 					sound.setupFromPool(trackConfig, manager);
-					return _pool.removeAt(i);
+					return sound;
 				}
 			}
 
@@ -88,8 +92,9 @@ package ch.adolio.sound
 		 * Releases a Sound Instance.
 		 *
 		 * @param sound The sound instance to release
+		 * @return Whether the sound instance has been released: releasing a sound instance which is already in the pool is ignored
 		 */
-		public function releaseSound(sound:SoundInstance):void
+		public function releaseSound(sound:SoundInstance):Boolean
 		{
 			// Check for `null` sound instance
 			if (!sound)
@@ -99,6 +104,13 @@ package ch.adolio.sound
 			if (sound.isDestroyed)
 				throw ArgumentError("A destroyed sound instance cannot be released.");
 
+			// Pooled twice, the sound instance would be acquired twice
+			if (sound.isInPool)
+			{
+				trace(LOG_PREFIX + " Sound Instance '" + sound.type + "#" + sound.id + "' is already in the pool. Release ignored.");
+				return false;
+			}
+
 			++_releaseCount;
 
 			// Stop the sound
@@ -106,11 +118,43 @@ package ch.adolio.sound
 
 			// Reset & add back to the pool
 			sound.resetAfterRelease();
+			sound.isInPool = true;
 			_pool.push(sound);
 
 			// Debug
 			if (_verbose)
 				trace(LOG_PREFIX + " Sound Instance released to pool.");
+
+			return true;
+		}
+
+		/**
+		 * Removes a Sound Instance from the pool, without acquiring it.
+		 */
+		internal function removeSound(sound:SoundInstance):void
+		{
+			var index:int = _pool.indexOf(sound);
+			if (index != -1)
+				_pool.removeAt(index);
+
+			sound.isInPool = false;
+		}
+
+		/**
+		 * Destroys the Sound Instances of the pool reading a given track, so that the track can be freed.
+		 */
+		internal function destroySoundsOfTrack(track:Track):void
+		{
+			for (var i:int = _pool.length - 1; i >= 0; --i)
+			{
+				var sound:SoundInstance = _pool[i];
+				if (sound.track != track)
+					continue;
+
+				_pool.removeAt(i);
+				sound.isInPool = false;
+				sound.destroy();
+			}
 		}
 
 		public function get capacity():uint
