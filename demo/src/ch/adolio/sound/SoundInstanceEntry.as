@@ -227,6 +227,30 @@ package ch.adolio.sound
 			Starling.current.juggler.remove(this);
 		}
 
+		/**
+		 * Stops following the sound instance & refreshing, then disposes the entry.
+		 *
+		 * A sound instance released to the pool is not destroyed: it may be used again for another sound.
+		 */
+		public override function dispose():void
+		{
+			// The signals of a destroyed sound instance are already cleared
+			if (_soundInstance && !_soundInstance.isDestroyed)
+			{
+				_soundInstance.started.remove(onSoundStartedToBePlayed);
+				_soundInstance.paused.remove(onSoundPaused);
+				_soundInstance.resumed.remove(onSoundResumed);
+				_soundInstance.stopped.remove(onSoundStopped);
+				_soundInstance.completed.remove(onSoundCompleted);
+				_soundInstance.destroyed.remove(onSoundDestroyed);
+			}
+
+			clearSound();
+			playStatusUpdated.removeAll();
+
+			super.dispose();
+		}
+
 		private function onPositionValueChanged(event:Event):void
 		{
 			_soundInstance.positionRatio = _positionSlider.value;
@@ -246,8 +270,8 @@ package ch.adolio.sound
 		{
 			_isPositionSliderGrabbed = false;
 
-			// Reset back playing status
-			if (_wasPlayingWhenGrabbed && !_soundInstance.isDestroyed)
+			// Reset back playing status, unless the position change completed the sound & the entry got disposed
+			if (_wasPlayingWhenGrabbed && _soundInstance && !_soundInstance.isDestroyed)
 				_soundInstance.resume();
 		}
 

@@ -325,12 +325,9 @@ package ch.adolio.sound
 				var entry:SoundInstanceEntry = _soundInstanceEntries[i];
 				if (entry.soundInstance == si)
 				{
-					// Remove from lists
-					_soundInstanceEntriesContainer.removeChild(entry);
+					// Remove from lists & dispose: the entry stops following its sound instance
 					_soundInstanceEntries.removeAt(i);
-
-					// Unregister from events
-					entry.playStatusUpdated.remove(onSoundInstanceEntryPlayStatusUpdated);
+					_soundInstanceEntriesContainer.removeChild(entry, true);
 
 					// No need to look for more entries
 					break;
