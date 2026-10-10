@@ -112,8 +112,8 @@ package ch.adolio.sound
 			if (value < 0)
 				value = findStartTrimDuration(trimDefaultSilenceThreshold);
 
-			// Check for invalid trimming values
-			if (value + _trimEndDuration > _track.length)
+			// Check for invalid trimming values (including the ones which are not a number)
+			if (!(value + _trimEndDuration <= _track.length))
 				throw new ArgumentError("[Track Configuration] Invalid trimming. Start + end trimming cannot be greater than the sound length. Sound length: " + _track.length + ", Trimming length: " + (value + _trimEndDuration));
 
 			// Update trimming
@@ -131,8 +131,8 @@ package ch.adolio.sound
 			if (value < 0)
 				value = findEndTrimDuration(trimDefaultSilenceThreshold, _track.length);
 
-			// Check for invalid trimming values
-			if (_trimStartDuration + value > _track.length)
+			// Check for invalid trimming values (including the ones which are not a number)
+			if (!(_trimStartDuration + value <= _track.length))
 				throw new ArgumentError("[Track Configuration] Invalid trimming duration. Start + end trimming durations cannot be greater than the sound length. Sound length: " + _track.length + ", Trimming length: " + (_trimStartDuration + value));
 
 			// Update trimming

@@ -30,6 +30,7 @@ package ch.adolio.sound.test
 		{
 			testInstanceVolumes();
 			testTrackConfigurationBaseVolume();
+			testInvalidTrimsRejected();
 			testManagerVolume();
 			testInvalidPitchesRejected();
 			testInvalidPositionsRejected();
@@ -64,6 +65,23 @@ package ch.adolio.sound.test
 			Assert.equalsNumber(config.baseVolume, SoundInstance.VOLUME_MIN, EPSILON, "Base volume clamped to min");
 			config.baseVolume = NaN;
 			Assert.equalsNumber(config.baseVolume, SoundInstance.VOLUME_MAX, EPSILON, "NaN base volume considered as max");
+		}
+
+		private function testInvalidTrimsRejected():void
+		{
+			var config:TrackConfiguration = new TrackConfiguration(ProbeTrack.tone(1000), "tone", 100, 200);
+
+			assertRejected(function():void { config.trimStartDuration = NaN; }, "Start trim which is not a number");
+			assertRejected(function():void { config.trimEndDuration = NaN; }, "End trim which is not a number");
+			assertRejected(function():void { config.trimStartDuration = Number.POSITIVE_INFINITY; }, "Infinite start trim");
+			assertRejected(function():void { config.trimEndDuration = Number.POSITIVE_INFINITY; }, "Infinite end trim");
+			Assert.equalsNumber(config.trimStartDuration, 100, EPSILON, "Rejected start trims not applied");
+			Assert.equalsNumber(config.trimEndDuration, 200, EPSILON, "Rejected end trims not applied");
+
+			assertRejected(function():void
+			{
+				new TrackConfiguration(ProbeTrack.tone(1000), "tone", NaN);
+			}, "Start trim which is not a number in constructor");
 		}
 
 		private function testManagerVolume():void

@@ -165,7 +165,14 @@ package ch.adolio.sound
 
 		private function onPlayButtonTriggered():void
 		{
-			_soundTest.playSound(_trackConfiguration.type, 0.5, parseInt(_startPositionTextInput.text), _loopStepper.value);
+			try
+			{
+				_soundTest.playSound(_trackConfiguration.type, 0.5, parseFloat(_startPositionTextInput.text), _loopStepper.value);
+			}
+			catch (e:ArgumentError)
+			{
+				trace("[Sound Configuration Entry] Cannot play sound. Error: " + e.message);
+			}
 		}
 
 		private function onUnregisterButtonTriggered():void
@@ -177,7 +184,7 @@ package ch.adolio.sound
 		{
 			try
 			{
-				_trackConfiguration.trimStartDuration = parseInt(_trimStartTextInput.text);
+				_trackConfiguration.trimStartDuration = parseFloat(_trimStartTextInput.text);
 			}
 			catch (e:ArgumentError)
 			{
@@ -189,7 +196,7 @@ package ch.adolio.sound
 		{
 			try
 			{
-				_trackConfiguration.trimEndDuration = parseInt(_trimEndTextInput.text);
+				_trackConfiguration.trimEndDuration = parseFloat(_trimEndTextInput.text);
 			}
 			catch (e:ArgumentError)
 			{

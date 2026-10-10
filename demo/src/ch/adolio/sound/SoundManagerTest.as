@@ -22,6 +22,7 @@ package ch.adolio.sound
 	import feathers.controls.Slider;
 	import feathers.layout.VerticalLayout;
 	import flash.events.Event;
+	import flash.events.IOErrorEvent;
 	import flash.filesystem.File;
 	import flash.filesystem.FileMode;
 	import flash.filesystem.FileStream;
@@ -29,6 +30,7 @@ package ch.adolio.sound
 	import flash.net.FileFilter;
 	import flash.net.URLRequest;
 	import flash.utils.ByteArray;
+	import flash.utils.Dictionary;
 	import starling.core.Starling;
 	import starling.display.Sprite;
 	import starling.events.Event;
@@ -43,6 +45,7 @@ package ch.adolio.sound
 		private var _loadMp3SoundButton:Button;
 		private var _loadWavSoundButton:Button;
 		private var _currentFileRef:File;
+		private var _loadingMp3Names:Dictionary = new Dictionary(); // File name by sound being loaded
 
 		// Registered sounds
 		private var _trackConfigurationEntries:Vector.<TrackConfigurationEntry> = new Vector.<TrackConfigurationEntry>();
@@ -367,23 +370,47 @@ package ch.adolio.sound
 			_currentFileRef.removeEventListener(flash.events.Event.SELECT, onMp3FileSelected);
 			_currentFileRef.removeEventListener(flash.events.Event.CANCEL, onMp3FileSelectionCanceled);
 
-			// Load sound for path
+			// Load sound for path (another file may be selected before the loading ends)
 			var sound:Sound = new Sound();
-			sound.load(new URLRequest(_currentFileRef.url));
+			_loadingMp3Names[sound] = _currentFileRef.name;
 			sound.addEventListener(flash.events.Event.COMPLETE, onMp3SoundLoaded);
+			sound.addEventListener(IOErrorEvent.IO_ERROR, onMp3SoundLoadingFailed);
+			sound.load(new URLRequest(_currentFileRef.url));
 		}
 
 		private function onMp3SoundLoaded(event:flash.events.Event):void
 		{
+			var sound:Sound = event.target as Sound;
+			var name:String = stopLoadingMp3Sound(sound);
+
 			try
 			{
 				// Register loaded sound
-				_sndMgr.registerTrack(_currentFileRef.name, new Mp3Track(event.target as Sound));
+				_sndMgr.registerTrack(name, new Mp3Track(sound));
 			}
 			catch (e:ArgumentError)
 			{
 				trace("[Sound Test] Couldn't register MP3 track. Error: " + e.message);
 			}
+		}
+
+		private function onMp3SoundLoadingFailed(event:IOErrorEvent):void
+		{
+			var name:String = stopLoadingMp3Sound(event.target as Sound);
+			trace("[Sound Test] Couldn't load MP3 file '" + name + "'. Error: " + event.text);
+		}
+
+		/**
+		 * Stops listening to a sound being loaded & returns the name of its file.
+		 */
+		private function stopLoadingMp3Sound(sound:Sound):String
+		{
+			sound.removeEventListener(flash.events.Event.COMPLETE, onMp3SoundLoaded);
+			sound.removeEventListener(IOErrorEvent.IO_ERROR, onMp3SoundLoadingFailed);
+
+			var name:String = _loadingMp3Names[sound];
+			delete _loadingMp3Names[sound];
+			return name;
 		}
 
 		//-----------------------------------------------------------------
@@ -414,19 +441,20 @@ package ch.adolio.sound
 			_currentFileRef.removeEventListener(flash.events.Event.SELECT, onWavFileSelected);
 			_currentFileRef.removeEventListener(flash.events.Event.CANCEL, onWavFileSelectionCanceled);
 
-			// Load sound for path
-			var fileStream:FileStream = new FileStream();
-			fileStream.open(_currentFileRef, FileMode.READ);
-			var bytes:ByteArray = new ByteArray();
-			fileStream.readBytes(bytes);
-			fileStream.close();
-
+			// The file may be unreadable, invalid, in an unsupported format or already registered
 			try
 			{
+				// Load sound for path
+				var fileStream:FileStream = new FileStream();
+				fileStream.open(_currentFileRef, FileMode.READ);
+				var bytes:ByteArray = new ByteArray();
+				fileStream.readBytes(bytes);
+				fileStream.close();
+
 				// Register loaded sound
 				_sndMgr.registerTrack(_currentFileRef.name, new WavTrack(bytes));
 			}
-			catch (e:ArgumentError)
+			catch (e:Error)
 			{
 				trace("[Sound Test] Couldn't register Wav track. Error: " + e.message);
 			}
