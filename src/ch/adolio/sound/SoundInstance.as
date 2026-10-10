@@ -47,7 +47,7 @@ package ch.adolio.sound
 		// Options
 		private var _infiniteLooping:Boolean = false;
 		private var _loops:int = 0;
-		private var _currentLoop:int = 0;
+		private var _currentLoop:int = 0; // Loop being read: ahead of the loop heard for a custom sampled sound
 		private var _isMuted:Boolean = false;
 		private var _baseVolume:Number = VOLUME_MAX; // base volume, not mixed
 		private var _volume:Number = VOLUME_MAX; // instance volume, not mixed
@@ -347,7 +347,7 @@ package ch.adolio.sound
 					break;
 
 				// Still looping & reached the end of the track?
-				if ((_infiniteLooping || loopsRemaining > 0) && samplesFed < _samplingCount)
+				if ((_infiniteLooping || _currentLoop < _loops) && samplesFed < _samplingCount)
 				{
 					// Increase current loop
 					_currentLoop++;
@@ -1179,9 +1179,21 @@ package ch.adolio.sound
 			return _infiniteLooping ? -1 : _loops;
 		}
 
+		/**
+		 * Return the loop being heard, starting from 0.
+		 *
+		 * Once the sound is completed, this is the last loop played.
+		 */
 		public function get currentLoop():int
 		{
-			return _currentLoop;
+			// Prevent potential devision by zero
+			var length:Number = this.length;
+			if (length <= 0)
+				return 0;
+
+			// Samples of further loops are fed ahead of the playback: the loop heard comes from the position
+			var loop:int = Math.floor(position / length);
+			return _infiniteLooping || loop < _loops ? loop : _loops;
 		}
 
 		/**
@@ -1193,8 +1205,8 @@ package ch.adolio.sound
 			if (_infiniteLooping)
 				return -1;
 
-			// Compute remaining loops based on the actual channel position
-			return _loops - _currentLoop;
+			// Compute remaining loops based on the loop heard
+			return _loops - currentLoop;
 		}
 
 		/**
@@ -1387,10 +1399,10 @@ package ch.adolio.sound
 
 				// Debug
 				if (_verbose)
-					trace(LOG_PREFIX + " Standard sound completed. Current loop: " + _currentLoop + ", Loops remaining: " + loopsRemaining);
+					trace(LOG_PREFIX + " Standard sound completed. Current loop: " + _currentLoop + ", Loops remaining: " + (_loops - _currentLoop));
 
 				// Replay?
-				if (_infiniteLooping || loopsRemaining >= 0)
+				if (_infiniteLooping || _currentLoop <= _loops)
 				{
 					// Continue playing...
 					playInternal(volume);

@@ -15,7 +15,6 @@ package ch.adolio.sound.test
 	import ch.adolio.sound.SoundManager;
 	import ch.adolio.test.Assert;
 	import ch.adolio.test.ITest;
-	import flash.media.Sound;
 
 	/**
 	 * Playback controls (play, pause, resume, stop, position), loops setup & stopping all sounds, for custom sampled
@@ -26,9 +25,6 @@ package ch.adolio.sound.test
 	 */
 	public class PlaybackTest implements ITest
 	{
-		[Embed(source = "../../../../../../demo/media/sounds/piano_MP3_mono_44100.mp3")]
-		private static const PianoMp3:Class;
-
 		private static const EPSILON:Number = 0.000001;
 
 		public function execute():void
@@ -205,7 +201,7 @@ package ch.adolio.sound.test
 
 		private function testStandardSound():void
 		{
-			var track:Mp3Track = new Mp3Track(new PianoMp3() as Sound);
+			var track:Mp3Track = TestSounds.createMp3Track();
 			Assert.isTrue(track.length > 1000, "MP3 track length");
 
 			var manager:SoundManager = createManager();

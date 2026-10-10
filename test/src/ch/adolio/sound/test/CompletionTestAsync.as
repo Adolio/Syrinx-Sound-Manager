@@ -10,6 +10,7 @@
 
 package ch.adolio.sound.test
 {
+	import ch.adolio.sound.Mp3Track;
 	import ch.adolio.sound.SoundInstance;
 	import ch.adolio.sound.SoundInstancesPool;
 	import ch.adolio.sound.SoundManager;
@@ -36,6 +37,7 @@ package ch.adolio.sound.test
 				testListenersCalledBeforeReleaseToPool,
 				testInstancePlayedAgainByListenerKept,
 				testLoopsPlayedBeforeCompletion,
+				testStandardSoundCompleted,
 				testCompletedInstanceKeptAlive,
 				testCompletionReleasesToPool,
 				testTrackEndingOnSamplingBoundaryCompletes,
@@ -138,13 +140,44 @@ package ch.adolio.sound.test
 			var startTime:int = getTimer();
 			var si:SoundInstance = manager.play("short", 1, 0, 2);
 			assertPlaying(si);
-			si.destroyed.add(function(instance:SoundInstance):void
+			si.freeWhenCompleted = false;
+			si.completed.add(function(instance:SoundInstance):void
 			{
 				defer(function():void
 				{
 					var elapsedTime:int = getTimer() - startTime;
 					Assert.isTrue(elapsedTime >= 2.5 * TRACK_DURATION, "Three repetitions played before completion. Elapsed time: " + elapsedTime + " ms");
-					Assert.equalsInt(si.currentLoop, 2, "Last loop reached");
+					Assert.equalsInt(si.currentLoop, 2, "Current loop once completed is the last one played");
+					Assert.equalsInt(si.loopsRemaining, 0, "No loop remaining once completed");
+					Assert.equalsNumber(si.remainingTime, 0, 0.01, "No remaining time once completed");
+
+					si.destroy();
+					next();
+				});
+			});
+		}
+
+		private function testStandardSoundCompleted(next:Function):void
+		{
+			// An MP3 track played without trimming nor pitch, 100 ms before its end
+			var track:Mp3Track = TestSounds.createMp3Track();
+			var manager:SoundManager = new SoundManager();
+			manager.volume = 0;
+			manager.registerTrack("piano", track);
+
+			var si:SoundInstance = manager.play("piano", 1, track.length - 100);
+			assertPlaying(si);
+			si.freeWhenCompleted = false;
+			si.completed.add(function(instance:SoundInstance):void
+			{
+				defer(function():void
+				{
+					Assert.isFalse(si.isPlaying, "Not playing once completed");
+					Assert.equalsNumber(si.position, si.totalLength, 0.01, "Position at the end once completed");
+					Assert.equalsInt(si.currentLoop, 0, "Current loop once completed is the last one played");
+					Assert.equalsInt(si.loopsRemaining, 0, "No loop remaining once completed");
+
+					si.destroy();
 					next();
 				});
 			});

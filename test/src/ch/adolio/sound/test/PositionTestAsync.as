@@ -36,7 +36,8 @@ package ch.adolio.sound.test
 				testPositionWithMaxSampling,
 				testPositionOfPitchedSound,
 				testPositionContinuousOnPitchChanges,
-				testPauseKeepsLoopHeard];
+				testPauseKeepsLoopHeard,
+				testCurrentLoopFollowsLoopHeard];
 		}
 
 		private function testPositionFromLaterLoop(next:Function):void
@@ -146,6 +147,25 @@ package ch.adolio.sound.test
 				si.manager.destroyAllSoundInstances();
 				next();
 			}, 100);
+		}
+
+		private function testCurrentLoopFollowsLoopHeard(next:Function):void
+		{
+			// Samples of the second loop are already fed when the sound is played, 400 ms before the end of its first loop
+			var si:SoundInstance = createManager(TrackConfiguration.SAMPLING_MAX_VALUE).play("tone", 1, 600, 3);
+			assertPlaying(si);
+			Assert.equalsInt(si.currentLoop, 0, "Current loop while the first loop is heard");
+			Assert.equalsInt(si.loopsRemaining, 3, "Loops remaining while the first loop is heard");
+
+			// 200 ms after the start of the second loop
+			defer(function():void
+			{
+				Assert.equalsInt(si.currentLoop, 1, "Current loop while the second loop is heard");
+				Assert.equalsInt(si.loopsRemaining, 2, "Loops remaining while the second loop is heard");
+
+				si.manager.destroyAllSoundInstances();
+				next();
+			}, 600);
 		}
 
 		private function createManager(sampling:uint = TrackConfiguration.SAMPLING_MIN_VALUE):SoundManager
