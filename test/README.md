@@ -32,7 +32,8 @@ real time.
 - The samples written by a playing sound cannot be read back: check what the sound reads from its `ProbeTrack` instead
   (extractions count, positions between two samples, lowest & highest samples)
 - Trims detection reads the track: call `resetExtractionRecords` on the `ProbeTrack` before checking what a sound reads
-- Build WAVE files with `WavBuilder` to test the parsing of a given format
+- Build WAVE files with `WavBuilder` to test the parsing of a given format, chunk by chunk (`assemble`) for unusual or
+  invalid files
 - Set the master volume of the managers playing sounds to 0
 - Extend `ScenariosTestAsync` for an asynchronous test made of several scenarios: it runs them one after the other &
   fails the test on any error raised through `attempt` or `defer`
@@ -45,7 +46,7 @@ real time.
 
 | Test | Covered behavior |
 |------|------------------|
-| `WavTrackTest` | Length & extracted samples of the supported formats (PCM 16 bits & IEEE float 32 bits, mono & stereo), with & without pre-decoding, extraction from a position, from a position between two samples & near the end, unknown chunk skipped, rejection of other sample rates, bit depths, channel counts & audio formats |
+| `WavTrackTest` | Length & extracted samples of the supported formats (PCM 16 bits & IEEE float 32 bits, mono & stereo), with & without pre-decoding, extraction from a position, from a position between two samples & near the end, unknown chunk skipped, rejection of other sample rates, bit depths, channel counts & audio formats (reported by the error), format chunks with an extension (18 & 40 bytes), chunks of odd size & their padding, data chunk declaring more bytes than available, rejection of invalid files (empty, cut within the header, not RIFF, not WAVE, format or data chunk missing, data before format, format chunk too small, null) & of a chunk with a corrupted size |
 | `TrackConfigurationTest` | Defaults, sampling bounds, trims exceeding the length rejected, start & end trims detection exact to the sample (silences not aligned on the sampling, shorter than the sampling, below the threshold, isolated sample after a silence, max sampling, start position), automatic trims, `findTrim` (including a fully silent track), silent tracks without stack overflow (two blocks & 30 seconds), cloning (except the base volume), time to samples conversions, destruction |
 | `TrackRegistrationTest` | Registration & its signal, lookups, duplicate type rejected, automatic start trim at registration, unregistration & its signal (configuration destroyed, track kept), unregistered type played, max channel capacity |
 | `SoundInstanceTest` | Instances not played: registration to the manager & lookups, initial status, trimmed length, volume, base volume & mixed volume (with clamping), pan & mute, position & position ratio before start (with rejection of invalid values), manager change, destruction & destruction of all instances, null configuration rejected |

@@ -32,6 +32,9 @@ package ch.adolio.sound
 		private var _format:String;
 
 		// Format
+		private static const RIFF_HEADER_SIZE:uint = 12; // Identifier, size & format, in bytes
+		private static const CHUNK_HEADER_SIZE:uint = 8; // Identifier & size, in bytes
+		private static const FMT_CHUNK_BASE_SIZE:uint = 16; // In bytes
 		private const WAVE_FORMAT_PCM:uint = 0x0001;
 		private const WAVE_FORMAT_IEEE_FLOAT:uint = 0x0003;
 		private var _fmtAudioFormat:uint;
@@ -83,47 +86,82 @@ package ch.adolio.sound
 
 		private function parseRawData(data:ByteArray):void
 		{
+			// Check for argument validity
+			if (!data)
+				throw new ArgumentError(LOG_PREFIX + " Invalid argument. Data is null.");
+
 			// Make sure data is treated as little endian
 			data.endian = Endian.LITTLE_ENDIAN;
 
+			// Parse the file header: identifier, size (ignored: the actual size of the data is trusted) & format
+			if (data.bytesAvailable < RIFF_HEADER_SIZE || data.readUTFBytes(4) != "RIFF")
+				throw new IllegalOperationError(LOG_PREFIX + " Invalid Wave file: RIFF header not found.");
+
+			data.position += 4;
+			_format = data.readUTFBytes(4);
+			if (_format != "WAVE")
+				throw new IllegalOperationError(LOG_PREFIX + " Invalid Wave file: the RIFF format is not WAVE.");
+
+			// Debug
+			if (_verbose)
+				trace("	Format: " + _format);
+
 			// Browse chunks
-			while (data.bytesAvailable)
+			var isFormatParsed:Boolean = false;
+			var isDataParsed:Boolean = false;
+			while (data.bytesAvailable >= CHUNK_HEADER_SIZE)
 			{
 				// Read chunk id & size
 				var chunkId:String = data.readUTFBytes(4);
-				var chunkSize:uint = data.readInt();
+				var chunkSize:Number = data.readUnsignedInt();
+				var chunkPosition:Number = data.position;
 
 				// Debug
 				if (_verbose)
 					trace(chunkId + " (" + chunkSize + " bytes)");
 
-				// Parse chunk data
-				switch (chunkId)
+				// A truncated or corrupted file may declare a chunk bigger than what is left: only the available part is parsed
+				var availableSize:uint = Math.min(chunkSize, data.bytesAvailable);
+
+				// Parse chunk data, other chunks are ignored
+				if (chunkId == "fmt ")
 				{
-					case "RIFF": parseRIFFChunk(data, chunkSize); break;
-					case "fmt ": parseFmtSubChunk(data, chunkSize); break;
-					case "data": parseDataSubChunk(data, chunkSize); break;
-					default:
-						// Ignored chunks
-						data.position += chunkSize; // Jump to next chunk
-						break;
+					parseFmtSubChunk(data, availableSize);
+					isFormatParsed = true;
 				}
+				else if (chunkId == "data" && !isDataParsed)
+				{
+					if (!isFormatParsed)
+						throw new IllegalOperationError(LOG_PREFIX + " Invalid Wave file: the data chunk comes before the format chunk.");
+
+					parseDataSubChunk(data, availableSize);
+					isDataParsed = true;
+				}
+
+				// Jump to the next chunk: a chunk of odd size is followed by a padding byte
+				var nextChunkPosition:Number = chunkPosition + chunkSize + (chunkSize % 2);
+				if (nextChunkPosition >= data.length)
+					break;
+
+				data.position = nextChunkPosition;
 			}
-		}
 
-		private function parseRIFFChunk(data:ByteArray, size:uint):void
-		{
-			_format = data.readUTFBytes(4);
+			if (!isFormatParsed)
+				throw new IllegalOperationError(LOG_PREFIX + " Invalid Wave file: format chunk not found.");
 
-			if (_verbose)
-				trace("	Format: " + _format);
+			if (!isDataParsed)
+				throw new IllegalOperationError(LOG_PREFIX + " Invalid Wave file: data chunk not found.");
 		}
 
 		private function parseFmtSubChunk(data:ByteArray, size:uint):void
 		{
+			// The chunk may hold an extension after its base part, which is ignored
+			if (size < FMT_CHUNK_BASE_SIZE)
+				throw new IllegalOperationError(LOG_PREFIX + " Invalid Wave file: the format chunk is too small.");
+
 			// Fmt sub-chunk
-			_fmtAudioFormat = data.readShort();
-			_fmtChannels = data.readShort();
+			_fmtAudioFormat = data.readUnsignedShort();
+			_fmtChannels = data.readUnsignedShort();
 			_fmtSampleRate = data.readInt();
 			_fmtByteRate = data.readInt();
 			_fmtBlockAlign = data.readShort();
@@ -132,7 +170,7 @@ package ch.adolio.sound
 			// Format type validity check
 			if (!(_fmtAudioFormat == WAVE_FORMAT_PCM || _fmtAudioFormat == WAVE_FORMAT_IEEE_FLOAT))
 			{
-				throw new IllegalOperationError(LOG_PREFIX + " Unsupported Wave Audio Format: " + _format);
+				throw new IllegalOperationError(LOG_PREFIX + " Unsupported Wave Audio Format: " + _fmtAudioFormat + ". Only PCM (" + WAVE_FORMAT_PCM + ") & IEEE float (" + WAVE_FORMAT_IEEE_FLOAT + ") are supported.");
 			}
 
 			// PCM 16 bits format check
@@ -205,9 +243,6 @@ package ch.adolio.sound
 				_dataSource = data;
 				_dataStartPosition = data.position;
 				_dataSize = size;
-
-				// For further chunks
-				data.position += size;
 
 				// Compute length
 				_sampleGroupSize = (_fmtBitsPerSample / 8) * _fmtChannels;

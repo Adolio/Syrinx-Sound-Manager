@@ -37,6 +37,12 @@ package ch.adolio.sound.test
 			testExtractionNearEnd();
 			testUnknownChunkSkipped();
 			testUnsupportedFormatsRejected();
+			testUnsupportedFormatReported();
+			testFormatChunkSizes();
+			testOddSizedChunksSkipped();
+			testTruncatedDataUsed();
+			testInvalidFilesRejected();
+			testCorruptedChunkSizeRejected();
 		}
 
 		private function testFormats(predecode:Boolean):void
@@ -109,6 +115,94 @@ package ch.adolio.sound.test
 			assertRejected(2, WavBuilder.FORMAT_EXTENSIBLE, 16, 44100, "Extensible format");
 		}
 
+		private function testUnsupportedFormatReported():void
+		{
+			for each (var audioFormat:int in [WavBuilder.FORMAT_ADPCM, WavBuilder.FORMAT_EXTENSIBLE])
+			{
+				var message:String = "";
+				try
+				{
+					new WavTrack(WavBuilder.build(createSamples(2), 2, audioFormat, 16));
+				}
+				catch (error:IllegalOperationError)
+				{
+					message = error.message;
+				}
+
+				Assert.isTrue(message.indexOf("Unsupported Wave Audio Format: " + audioFormat + ".") != -1, "Audio format given by the error. Message: " + message);
+			}
+		}
+
+		private function testFormatChunkSizes():void
+		{
+			// Format chunks may hold an extension after their 16 base bytes
+			for each (var size:int in [18, 40])
+			{
+				assertChunksParsed([
+					WavBuilder.createFormatChunk(2, WavBuilder.FORMAT_PCM, 16, 44100, size),
+					WavBuilder.createDataChunk(createSamples(2), WavBuilder.FORMAT_PCM, 16)],
+					2, PCM16_EPSILON, "PCM 16 bits stereo with a format chunk of " + size + " bytes");
+
+				assertChunksParsed([
+					WavBuilder.createFormatChunk(1, WavBuilder.FORMAT_IEEE_FLOAT, 32, 44100, size),
+					WavBuilder.createDataChunk(createSamples(1), WavBuilder.FORMAT_IEEE_FLOAT, 32)],
+					1, FLOAT_EPSILON, "IEEE float 32 bits mono with a format chunk of " + size + " bytes");
+			}
+		}
+
+		private function testOddSizedChunksSkipped():void
+		{
+			// A chunk of odd size is followed by a padding byte
+			assertChunksParsed([
+				WavBuilder.createFormatChunk(2),
+				WavBuilder.createChunk("LIST", 5),
+				WavBuilder.createDataChunk(createSamples(2)),
+				WavBuilder.createChunk("id3 ", 3)],
+				2, PCM16_EPSILON, "Chunks of odd size around the data");
+		}
+
+		private function testTruncatedDataUsed():void
+		{
+			// The data chunk declares more bytes than the file holds: the available samples are used
+			for each (var declaredSize:Number in [SAMPLES_COUNT * 4 + 1000, 0xFFFFFFFF])
+			{
+				assertChunksParsed([
+					WavBuilder.createFormatChunk(2),
+					WavBuilder.createDataChunk(createSamples(2), WavBuilder.FORMAT_PCM, 16, declaredSize)],
+					2, PCM16_EPSILON, "Data chunk declaring " + declaredSize + " bytes");
+			}
+		}
+
+		private function testInvalidFilesRejected():void
+		{
+			var format:ByteArray = WavBuilder.createFormatChunk(2);
+			var data:ByteArray = WavBuilder.createDataChunk(createSamples(2));
+
+			assertFileRejected(new ByteArray(), "Empty file");
+			assertFileRejected(WavBuilder.assemble([]), "File without chunk");
+			assertFileRejected(WavBuilder.assemble([format, data], "RIFX"), "Not a RIFF file");
+			assertFileRejected(WavBuilder.assemble([format, data], "RIFF", "AVI "), "Not a WAVE file");
+			assertFileRejected(WavBuilder.assemble([data]), "No format chunk");
+			assertFileRejected(WavBuilder.assemble([data, format]), "Data chunk before the format chunk");
+			assertFileRejected(WavBuilder.assemble([format]), "No data chunk");
+			assertFileRejected(WavBuilder.assemble([WavBuilder.createFormatChunk(2, WavBuilder.FORMAT_PCM, 16, 44100, 14), data]), "Format chunk too small");
+
+			var header:ByteArray = WavBuilder.assemble([format, data]);
+			header.length = 10;
+			assertFileRejected(header, "File cut within its header");
+
+			Assert.throws(ArgumentError, function():void { new WavTrack(null); }, "Null file");
+		}
+
+		private function testCorruptedChunkSizeRejected():void
+		{
+			// A size pointing far beyond the end of the file hides the data chunk
+			assertFileRejected(WavBuilder.assemble([
+				WavBuilder.createFormatChunk(2),
+				WavBuilder.createChunk("JUNK", 0xFFFFFFF8, new ByteArray()),
+				WavBuilder.createDataChunk(createSamples(2))]), "Chunk with a corrupted size");
+		}
+
 		//---------------------------------------------------------------------
 		//-- Helpers
 		//---------------------------------------------------------------------
@@ -135,6 +229,27 @@ package ch.adolio.sound.test
 			var target:ByteArray = new ByteArray();
 			Assert.equalsInt(track.extract(target, 500, position), 500, "Samples extracted. " + context);
 			assertExtractedSamples(target, channels, 1000, 500, epsilon, context);
+		}
+
+		/**
+		 * Checks that a file made of the given chunks gives the generated samples.
+		 */
+		private function assertChunksParsed(chunks:Array, channels:int, epsilon:Number, context:String):void
+		{
+			var track:WavTrack = new WavTrack(WavBuilder.assemble(chunks));
+			Assert.equalsNumber(track.length, SAMPLES_COUNT / ProbeTrack.SAMPLE_RATE_MS, FLOAT_EPSILON, "Length. " + context);
+
+			var target:ByteArray = new ByteArray();
+			Assert.equalsInt(track.extract(target, SAMPLES_COUNT, 0), SAMPLES_COUNT, "Samples extracted. " + context);
+			assertExtractedSamples(target, channels, 0, SAMPLES_COUNT, epsilon, context);
+		}
+
+		private function assertFileRejected(file:ByteArray, context:String):void
+		{
+			Assert.throws(IllegalOperationError, function():void
+			{
+				new WavTrack(file);
+			}, context);
 		}
 
 		private function assertRejected(channels:int, audioFormat:int, bitsPerSample:int, sampleRate:int, context:String):void
