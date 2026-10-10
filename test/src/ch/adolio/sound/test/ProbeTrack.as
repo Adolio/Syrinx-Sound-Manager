@@ -89,6 +89,17 @@ package ch.adolio.sound.test
 			return toneWithSilences(0, Math.round(durationMs * SAMPLE_RATE_MS), 0, amplitude);
 		}
 
+		/**
+		 * Forgets the extractions recorded so far.
+		 */
+		public function resetExtractionRecords():void
+		{
+			extractCount = 0;
+			fractionalExtractCount = 0;
+			lowestExtractedSample = -1;
+			highestExtractedSample = -1;
+		}
+
 		public function get samplesCount():int
 		{
 			return _left.length;

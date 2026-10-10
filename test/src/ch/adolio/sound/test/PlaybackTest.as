@@ -41,6 +41,8 @@ package ch.adolio.sound.test
 			testStandardSound();
 			testSoundsWithoutLength();
 			testCompletedListenersCalledBeforeFreeing();
+			testFractionalTrims();
+			testAutomaticTrimsReadExactly();
 		}
 
 		private function testPlayPauseResumeStop():void
@@ -263,6 +265,46 @@ package ch.adolio.sound.test
 					Assert.equalsInt(manager.getSoundInstancesCount(), 0, "Removed from the manager when played. " + context);
 				}
 			}
+		}
+
+		private function testFractionalTrims():void
+		{
+			// The first sampling request, made when played, starts from the start trim
+			var manager:SoundManager = createManager();
+			var track:ProbeTrack = ProbeTrack.tone(1000);
+			manager.registerTrack("tone", track, 100.5, 200.25);
+
+			var si:SoundInstance = manager.play("tone");
+			assertPlaying(si, "Played with fractional trims");
+			Assert.equalsNumber(si.length, 1000 - 100.5 - 200.25, EPSILON, "Length with fractional trims");
+			Assert.equalsInt(track.lowestExtractedSample, Math.round(100.5 * ProbeTrack.SAMPLE_RATE_MS), "First sample read with a fractional start trim");
+
+			manager.destroyAllSoundInstances();
+		}
+
+		private function testAutomaticTrimsReadExactly():void
+		{
+			// Silences which are not a whole number of milliseconds, & whose conversion back to samples falls just below a whole number
+			var manager:SoundManager = createManager();
+			var track:ProbeTrack = ProbeTrack.toneWithSilences(4001, 8000, 900);
+			manager.registerTrack("tone", track, -1, -1);
+			track.resetExtractionRecords(); // The trims detection reads the track
+
+			// Played 10 ms before its end: the first sampling request reads up to the end trim
+			var si:SoundInstance = new SoundInstance(manager.findRegisteredTrack("tone"), manager);
+			Assert.equalsNumber(si.length, 8000 / ProbeTrack.SAMPLE_RATE_MS, EPSILON, "Length between the automatic trims");
+			si.play(1, si.length - 10);
+			assertPlaying(si, "Played near the end trim");
+			Assert.equalsInt(track.highestExtractedSample, 4001 + 8000 - 1, "Last sample read is the last one of the tone");
+
+			// Played from its start
+			var first:ProbeTrack = ProbeTrack.toneWithSilences(4001, 8000, 900);
+			manager.registerTrack("other", first, -1, -1);
+			first.resetExtractionRecords();
+			assertPlaying(manager.play("other"), "Played from the start trim");
+			Assert.equalsInt(first.lowestExtractedSample, 4001, "First sample read is the first one of the tone");
+
+			manager.destroyAllSoundInstances();
 		}
 
 		private function createManager():SoundManager

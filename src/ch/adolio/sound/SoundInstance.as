@@ -57,8 +57,8 @@ package ch.adolio.sound
 		private var _freeWhenCompleted:Boolean = true; // Automatically destroy or release the instance when completed
 
 		// Triming
-		private var _trimStartDuration:int = 0; // In milliseconds
-		private var _trimEndDuration:int = 0; // In milliseconds
+		private var _trimStartDuration:Number = 0; // In milliseconds
+		private var _trimEndDuration:Number = 0; // In milliseconds
 
 		// Custom sampling
 		private var _extractionFunc:Function;
@@ -177,9 +177,9 @@ package ch.adolio.sound
 
 		private function setupCustomSamplingVars():void
 		{
-			// Setup start & end positions
-			_endPosition = (_track.length - _trimEndDuration) * SAMPLE_RATE_MS;
-			_startPosition = _trimStartDuration * SAMPLE_RATE_MS;
+			// Setup start & end positions (rounded: durations of a whole number of samples do not convert back exactly)
+			_endPosition = Math.round((_track.length - _trimEndDuration) * SAMPLE_RATE_MS);
+			_startPosition = Math.round(_trimStartDuration * SAMPLE_RATE_MS);
 
 			// Debug
 			if (_verbose)
