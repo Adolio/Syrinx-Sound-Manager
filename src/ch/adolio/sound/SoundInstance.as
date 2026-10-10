@@ -515,6 +515,11 @@ package ch.adolio.sound
 		 */
 		public function play(volume:Number = VOLUME_MAX, startTime:Number = 0, loops:int = 0):SoundInstance
 		{
+			// Check for start time validity
+			var newTotalLength:Number = loops < 0 ? Number.POSITIVE_INFINITY : length * (loops + 1);
+			if (!(startTime >= 0 && startTime <= newTotalLength) || startTime == Number.POSITIVE_INFINITY)
+				throw new ArgumentError(LOG_PREFIX + " Invalid start time. Start time must be in the following interval [0.." + newTotalLength + "]. Start time: " + startTime);
+
 			// setup looping properties
 			_loops = loops;
 			_infiniteLooping = loops < 0;
@@ -548,7 +553,7 @@ package ch.adolio.sound
 			}
 
 			// Check for position validity
-			if (startTime < 0 || startTime > length)
+			if (!(startTime >= 0 && startTime <= length))
 				throw new ArgumentError(LOG_PREFIX + " Invalid position. Start time must be in the following interval [0.." + length + "]. Start time: " + startTime);
 
 			// compute position in total length
@@ -894,19 +899,25 @@ package ch.adolio.sound
 		 * Set position with normalized position of sound.
 		 *
 		 * Note: Loops are part of the equation.
+		 *       For an infinitely looping sound, which has no total length, the ratio applies within its current loop.
 		 */
 		public function set positionRatio(value:Number):void
 		{
 			// Check for position ratio validity
-			if (value < 0 || value > 1.0)
+			if (!(value >= 0 && value <= 1.0))
 				throw new ArgumentError(LOG_PREFIX + " Invalid position ratio. Value must be in the following interval [0..1.0]");
 
 			// Debug
 			if (_verbose)
 				trace(LOG_PREFIX + " Sound '" + _type + "#" + _id + "' position ratio changed to:" + value);
 
-			// Update the position based on the total length
-			position = value * totalLength;
+			// Update the position based on the total length, or on the current loop when there is no total length
+			if (!_infiniteLooping)
+				position = value * totalLength;
+			else if (length > 0)
+				position = position - (position % length) + value * length;
+			else
+				position = 0;
 		}
 
 		/**
@@ -941,7 +952,7 @@ package ch.adolio.sound
 		public function set position(value:Number):void
 		{
 			// Check for position validity
-			if (value < 0 || value > totalLength)
+			if (!(value >= 0 && value <= totalLength) || value == Number.POSITIVE_INFINITY)
 				throw new ArgumentError(LOG_PREFIX + " Invalid position. Value must be in the following interval [0.." + totalLength + "]. Value: " + value);
 
 			// Update paused sound
@@ -990,10 +1001,7 @@ package ch.adolio.sound
 		public function set baseVolume(value:Number):void
 		{
 			// Update the voume value, but respect the mute flag.
-			if (value < VOLUME_MIN)
-				value = VOLUME_MIN;
-			else if (value > VOLUME_MAX || isNaN(volume))
-				value = VOLUME_MAX;
+			value = clampVolume(value);
 
 			// Set internal base volume
 			_baseVolume = value;
@@ -1030,10 +1038,7 @@ package ch.adolio.sound
 		public function set volume(value:Number):void
 		{
 			// Update the voume value, but respect the mute flag.
-			if (value < VOLUME_MIN)
-				value = VOLUME_MIN;
-			else if (value > VOLUME_MAX || isNaN(volume))
-				value = VOLUME_MAX;
+			value = clampVolume(value);
 
 			// Set internal volume
 			_volume = value;
@@ -1101,6 +1106,10 @@ package ch.adolio.sound
 		 */
 		public function set pitch(value:Number):void
 		{
+			// Check for pitch validity
+			if (!(value > 0) || value == Number.POSITIVE_INFINITY)
+				throw new ArgumentError(LOG_PREFIX + " Invalid pitch. Pitch must be a number greater than 0. Pitch: " + value);
+
 			// Debug
 			if (_verbose)
 				trace(LOG_PREFIX + " Sound '" + _type + "#" + _id + "' pitch set to " + value + ".");
@@ -1322,6 +1331,17 @@ package ch.adolio.sound
 		//---------------------------------------------------------------------
 		//-- Utility
 		//---------------------------------------------------------------------
+
+		/**
+		 * Clamps a volume between <code>VOLUME_MIN</code> & <code>VOLUME_MAX</code>. A volume which is not a number is considered as max.
+		 */
+		internal static function clampVolume(value:Number):Number
+		{
+			if (isNaN(value) || value > VOLUME_MAX)
+				return VOLUME_MAX;
+
+			return value < VOLUME_MIN ? VOLUME_MIN : value;
+		}
 
 		private static function approximately(a:Number, b:Number, epsilon:Number):Boolean
 		{

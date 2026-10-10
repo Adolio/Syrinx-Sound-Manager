@@ -97,7 +97,7 @@ package ch.adolio.sound
 
 		public function set baseVolume(value:Number):void
 		{
-			_baseVolume = value;
+			_baseVolume = SoundInstance.clampVolume(value);
 		}
 
 		public function get trimStartDuration():Number

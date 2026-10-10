@@ -64,8 +64,16 @@ package ch.adolio.sound
 			// Create the sound instance
 			var si:SoundInstance = createSound(type);
 
-			// Start playing
-			si.play(volume, startTime, loops);
+			// Start playing: an instance which cannot be played must not stay in the manager
+			try
+			{
+				si.play(volume, startTime, loops);
+			}
+			catch (error:Error)
+			{
+				freeSoundInstance(si);
+				throw error;
+			}
 
 			return si;
 		}
@@ -295,13 +303,19 @@ package ch.adolio.sound
 
 			// Destroy or release the sound instance if requested
 			if (si.freeWhenCompleted)
-			{
-				// Return to the pool if coming from it, unless pooling got disabled in the meantime
-				if (si.fromPool && _isPoolingEnabled)
-					releaseSoundInstanceToPool(si);
-				else
-					si.destroy();
-			}
+				freeSoundInstance(si);
+		}
+
+		/**
+		 * Releases a sound instance to the pool if it is coming from it, destroys it otherwise.
+		 */
+		private function freeSoundInstance(si:SoundInstance):void
+		{
+			// A pooled sound instance is destroyed as well once pooling got disabled
+			if (si.fromPool && _isPoolingEnabled)
+				releaseSoundInstanceToPool(si);
+			else
+				si.destroy();
 		}
 
 		/**
@@ -431,7 +445,7 @@ package ch.adolio.sound
 		 */
 		public function set volume(value:Number):void
 		{
-			_volume = value;
+			_volume = SoundInstance.clampVolume(value);
 
 			// Update (mixed) volume of all the sound instances
 			var si:SoundInstance;
