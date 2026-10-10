@@ -138,6 +138,9 @@ package ch.adolio.sound
 			_masterVolumeSlider.addEventListener(starling.events.Event.CHANGE, onMasterVolumeValueChanged);
 			addChild(_masterVolumeSlider);
 
+			// Apply the initial master volume
+			_sndMgr.volume = _masterVolumeSlider.value;
+
 			//-----------------------------------------------------------------
 			//-- Registered tracks
 			//-----------------------------------------------------------------
@@ -168,7 +171,7 @@ package ch.adolio.sound
 			_loadWavSoundButton.addEventListener(starling.events.Event.TRIGGERED, onLoadWavSoundTriggered);
 			addChild(_loadWavSoundButton);
 
-			// Running sounds
+			// Registered tracks
 			var soundConfigurationEntriesLayout:VerticalLayout = new VerticalLayout();
 			soundConfigurationEntriesLayout.gap = 1;
 			_trackConfigurationEntriesContainer = new ScrollContainer();
@@ -198,9 +201,9 @@ package ch.adolio.sound
 
 			// Running sounds
 			var soundInstanceEntriesLayout:VerticalLayout = new VerticalLayout();
-			soundConfigurationEntriesLayout.gap = 1;
+			soundInstanceEntriesLayout.gap = 1;
 			_soundInstanceEntriesContainer = new ScrollContainer();
-			_soundInstanceEntriesContainer.layout = soundConfigurationEntriesLayout;
+			_soundInstanceEntriesContainer.layout = soundInstanceEntriesLayout;
 			_soundInstanceEntriesContainer.scrollBarDisplayMode = ScrollBarDisplayMode.FLOAT;
 			_soundInstanceEntriesContainer.x = 16;
 			_soundInstanceEntriesContainer.y = _runningSoundsLabel.y + _runningSoundsLabel.height + 8;
