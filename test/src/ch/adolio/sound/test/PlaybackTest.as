@@ -36,6 +36,7 @@ package ch.adolio.sound.test
 			testPlayPauseResumeStop();
 			testLoopsSetup();
 			testPositionChanges();
+			testPanAndVolumeKeptWhileMuted();
 			testStopAll();
 			testStopAllWithListenersFreeingInstances();
 			testStandardSound();
@@ -153,6 +154,34 @@ package ch.adolio.sound.test
 
 			si.resume();
 			assertPlaying(si, "Resumed after a position change");
+
+			manager.destroyAllSoundInstances();
+		}
+
+		private function testPanAndVolumeKeptWhileMuted():void
+		{
+			var manager:SoundManager = createManager();
+			manager.registerTrack("tone", ProbeTrack.tone(1000));
+
+			// Muted before being played
+			var si:SoundInstance = new SoundInstance(manager.findRegisteredTrack("tone"), manager);
+			si.pan = 0.5;
+			si.isMuted = true;
+			si.play(0.4);
+			assertPlaying(si, "Played while muted");
+			Assert.isTrue(si.isMuted, "Still muted once played");
+			Assert.equalsNumber(si.pan, 0.5, EPSILON, "Pan kept when played while muted");
+			Assert.equalsNumber(si.volume, 0.4, EPSILON, "Volume kept when played while muted");
+
+			// Changed while muted
+			si.pan = -0.25;
+			si.volume = 0.6;
+			Assert.isTrue(si.isMuted, "Still muted after pan & volume changes");
+
+			si.isMuted = false;
+			Assert.equalsNumber(si.pan, -0.25, EPSILON, "Pan set while muted kept once unmuted");
+			Assert.equalsNumber(si.volume, 0.6, EPSILON, "Volume set while muted kept once unmuted");
+			assertPlaying(si, "Still playing once unmuted");
 
 			manager.destroyAllSoundInstances();
 		}
