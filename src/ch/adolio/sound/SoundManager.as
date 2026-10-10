@@ -32,6 +32,11 @@ package ch.adolio.sound
 		private var _soundInstances:Vector.<SoundInstance> = new Vector.<SoundInstance>();
 		private var _maxChannelCapacity:uint = MAX_CHANNELS; // Maximum number of sound instances playing simultaneously. The hard limit from Adobe AIR is `MAX_CHANNELS` for all Sound Managers together.
 
+		// Channels allocation
+		private static var _managers:Dictionary = new Dictionary(true); // Existing Sound Managers, as weak keys
+		private static var _isChannelsAllocationChecked:Boolean = false; // Reset whenever a max channel capacity may have changed
+		private static var _isChannelsOverAllocationReported:Boolean = false;
+
 		// Options
 		private var _volume:Number = 1.0;
 		private var _isPoolingEnabled:Boolean = false;
@@ -45,6 +50,12 @@ package ch.adolio.sound
 
 		// Debug
 		private static const LOG_PREFIX:String = "[Sound Manager]";
+
+		public function SoundManager()
+		{
+			_managers[this] = true;
+			_isChannelsAllocationChecked = false;
+		}
 
 		//---------------------------------------------------------------------
 		//-- Sound Instance Management
@@ -373,6 +384,9 @@ package ch.adolio.sound
 			if (_soundInstances.indexOf(si) != -1)
 				throw new ArgumentError(LOG_PREFIX + " Cannot add twice the same sound instance.");
 
+			// A sound is about to be played: the max channel capacities are expected to be set
+			checkChannelsAllocation();
+
 			// Add the instance
 			_soundInstances.push(si);
 
@@ -482,6 +496,45 @@ package ch.adolio.sound
 				throw new ArgumentError(LOG_PREFIX + " Invalid argument. Max channel capacity cannot be bigger than " + MAX_CHANNELS + ". This is an hard limit from Adobe AIR.");
 
 			_maxChannelCapacity = value;
+			_isChannelsAllocationChecked = false;
+		}
+
+		/**
+		 * Sum of the max channel capacities of the existing Sound Managers.
+		 *
+		 * <p>
+		 * Beyond MAX_CHANNELS (32), which Adobe AIR shares between all the Sound Managers, a Sound Manager may be
+		 * refused a channel by the sounds of another one although its own capacity is not reached.
+		 * </p>
+		 */
+		public static function get totalMaxChannelCapacity():uint
+		{
+			var total:uint = 0;
+			for (var manager:Object in _managers)
+				total += SoundManager(manager)._maxChannelCapacity;
+
+			return total;
+		}
+
+		/**
+		 * Reports, once, max channel capacities adding up to more than Adobe AIR can play.
+		 */
+		private static function checkChannelsAllocation():void
+		{
+			if (_isChannelsAllocationChecked)
+				return;
+
+			_isChannelsAllocationChecked = true;
+
+			if (_isChannelsOverAllocationReported)
+				return;
+
+			var total:uint = totalMaxChannelCapacity;
+			if (total > MAX_CHANNELS)
+			{
+				_isChannelsOverAllocationReported = true;
+				trace(LOG_PREFIX + " The max channel capacities of the Sound Managers add up to " + total + ", while Adobe AIR plays " + MAX_CHANNELS + " sounds at most: a Sound Manager may be refused a channel before reaching its own capacity. Set `maxChannelCapacity` on each Sound Manager so that they add up to " + MAX_CHANNELS + " at most.");
+			}
 		}
 	}
 }

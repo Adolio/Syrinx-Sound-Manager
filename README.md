@@ -219,7 +219,17 @@ Releasing a `Sound Instance` which is already in the pool is ignored.
 
 ### 🚦 Sound channels limit
 
-Adobe AIR plays at most 32 sounds at the same time, all `Sound Managers` together. A `Sound Manager` can be limited further with `maxChannelCapacity`.
+Adobe AIR plays at most 32 sounds at the same time, all `Sound Managers` together. A `Sound Manager` can be limited further with `maxChannelCapacity`, which is 32 by default.
+
+When using several `Sound Managers`, give each one its share of the 32 channels, so that the sounds of one can never take the channels another one relies on:
+
+```actionscript
+_musicSoundManager.maxChannelCapacity = 4;
+_uiSoundManager.maxChannelCapacity = 4;
+_fxSoundManager.maxChannelCapacity = 24;
+```
+
+A warning is traced when the capacities of the `Sound Managers` add up to more than 32. `SoundManager.totalMaxChannelCapacity` returns their sum.
 
 When a sound cannot get a sound channel:
 

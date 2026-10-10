@@ -31,6 +31,7 @@ package ch.adolio.sound.test
 			testUnregistration();
 			testUnregisteredTypeCannotBePlayed();
 			testMaxChannelCapacity();
+			testTotalMaxChannelCapacity();
 		}
 
 		private function testRegistration():void
@@ -125,6 +126,22 @@ package ch.adolio.sound.test
 				manager.maxChannelCapacity = SoundManager.MAX_CHANNELS + 1;
 			}, "Capacity above the AIR limit");
 			Assert.equalsInt(manager.maxChannelCapacity, 8, "Rejected capacity not applied");
+		}
+
+		private function testTotalMaxChannelCapacity():void
+		{
+			// Managers of other tests may still exist, or be collected at any time: the total is only known to cover the ones held here
+			var manager1:SoundManager = new SoundManager();
+			var manager2:SoundManager = new SoundManager();
+			Assert.isTrue(SoundManager.totalMaxChannelCapacity >= 2 * SoundManager.MAX_CHANNELS, "Total of the default capacities. Total: " + SoundManager.totalMaxChannelCapacity);
+
+			manager1.maxChannelCapacity = 4;
+			manager2.maxChannelCapacity = 6;
+			var total:uint = SoundManager.totalMaxChannelCapacity;
+			Assert.isTrue(total >= 10, "Total of the capacities set. Total: " + total);
+
+			manager2.maxChannelCapacity = 0;
+			Assert.isTrue(SoundManager.totalMaxChannelCapacity <= total - 6, "Total following a lowered capacity. Total: " + SoundManager.totalMaxChannelCapacity);
 		}
 	}
 }
