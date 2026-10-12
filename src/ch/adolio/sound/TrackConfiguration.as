@@ -55,6 +55,13 @@ package ch.adolio.sound
 		 */
 		public function TrackConfiguration(track:Track, type:String, trimStartDuration:Number = 0, trimEndDuration:Number = 0, sampling:uint = SAMPLING_MIN_VALUE)
 		{
+			// Check for arguments validity
+			if (!track)
+				throw new ArgumentError("[Track Configuration] Invalid argument. Track is null.");
+
+			if (!type)
+				throw new ArgumentError("[Track Configuration] Invalid argument. Type is null or empty.");
+
 			// Setup core variables
 			_track = track;
 			_type = type;

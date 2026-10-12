@@ -29,6 +29,10 @@ package ch.adolio.sound
 
 		public function Mp3Track(nativeSound:flash.media.Sound)
 		{
+			// Check for argument validity
+			if (!nativeSound)
+				throw new ArgumentError("[MP3 Track] Invalid argument. Sound is null.");
+
 			_nativeSound = nativeSound;
 		}
 

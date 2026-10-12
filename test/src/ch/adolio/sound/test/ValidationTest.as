@@ -10,6 +10,7 @@
 
 package ch.adolio.sound.test
 {
+	import ch.adolio.sound.Mp3Track;
 	import ch.adolio.sound.SoundInstance;
 	import ch.adolio.sound.SoundManager;
 	import ch.adolio.sound.TrackConfiguration;
@@ -31,6 +32,7 @@ package ch.adolio.sound.test
 			testInstanceVolumes();
 			testTrackConfigurationBaseVolume();
 			testInvalidTrimsRejected();
+			testMissingTracksAndTypesRejected();
 			testManagerVolume();
 			testInvalidPitchesRejected();
 			testInvalidPositionsRejected();
@@ -82,6 +84,25 @@ package ch.adolio.sound.test
 			{
 				new TrackConfiguration(ProbeTrack.tone(1000), "tone", NaN);
 			}, "Start trim which is not a number in constructor");
+		}
+
+		private function testMissingTracksAndTypesRejected():void
+		{
+			var manager:SoundManager = new SoundManager();
+			var track:ProbeTrack = ProbeTrack.tone(1000);
+
+			assertRejected(function():void { manager.registerTrack("tone", null); }, "Null track registered");
+			assertRejected(function():void { manager.registerTrack(null, track); }, "Track registered with a null type");
+			assertRejected(function():void { manager.registerTrack("", track); }, "Track registered with an empty type");
+			Assert.equalsInt(manager.getRegisteredTracks().length, 0, "Nothing registered by rejected registrations");
+
+			assertRejected(function():void { new TrackConfiguration(null, "tone"); }, "Track configuration of a null track");
+			assertRejected(function():void { new TrackConfiguration(track, null); }, "Track configuration with a null type");
+			assertRejected(function():void { new TrackConfiguration(track, ""); }, "Track configuration with an empty type");
+
+			assertRejected(function():void { new Mp3Track(null); }, "MP3 track of a null sound");
+
+			manager.destroy();
 		}
 
 		private function testManagerVolume():void

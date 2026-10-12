@@ -268,6 +268,13 @@ package ch.adolio.sound
 		 */
 		public function registerTrack(type:String, track:Track, trimStartDuration:Number = 0, trimEndDuration:Number = 0, sampling:uint = 2048):TrackConfiguration
 		{
+			// Check for arguments validity
+			if (!type)
+				throw new ArgumentError(LOG_PREFIX + " Invalid argument. Sound type is null or empty.");
+
+			if (!track)
+				throw new ArgumentError(LOG_PREFIX + " Invalid argument. Track of sound type '" + type + "' is null.");
+
 			// Prevent to register twice an sound
 			if (hasTrackRegistered(type))
 				throw new ArgumentError(LOG_PREFIX + " Sound type '" + type + "' is already registered.");
