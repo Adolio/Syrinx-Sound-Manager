@@ -457,9 +457,6 @@ package ch.adolio.sound
 			// Listen to sound destruction
 			si.destroyed.add(onSoundDestroyed);
 
-			// Update (mixed) volume
-			si.volume = si.volume;
-
 			// Emit event
 			soundInstanceAdded.dispatch(si);
 		}

@@ -34,6 +34,7 @@ package ch.adolio.sound.test
 			testPanAndMute();
 			testPositionBeforeStart();
 			testManagerChange();
+			testSameManagerSetAgain();
 			testDestruction();
 			testDestroyAll();
 			testNullConfigurationRejected();
@@ -175,6 +176,24 @@ package ch.adolio.sound.test
 			Assert.isNull(si.manager, "No manager");
 			Assert.equalsInt(manager2.getSoundInstancesCount(), 0, "Removed from the second manager");
 			Assert.equalsNumber(si.mixedVolume, 1, EPSILON, "Mixed volume without manager");
+		}
+
+		private function testSameManagerSetAgain():void
+		{
+			var manager:SoundManager = new SoundManager();
+			manager.volume = 0.5;
+			var si:SoundInstance = new SoundInstance(registerTone(manager), manager);
+			var removedCount:int = 0;
+			var addedCount:int = 0;
+			manager.soundInstanceRemoved.add(function(instance:SoundInstance):void { removedCount++; });
+			manager.soundInstanceAdded.add(function(instance:SoundInstance):void { addedCount++; });
+
+			si.manager = manager;
+			Assert.equalsInt(removedCount, 0, "No sound instance removed signal");
+			Assert.equalsInt(addedCount, 0, "No sound instance added signal");
+			Assert.isTrue(si.manager == manager, "Same manager");
+			Assert.equalsInt(manager.getSoundInstancesCount(), 1, "Still held by the manager");
+			Assert.equalsNumber(si.mixedVolume, 0.5, EPSILON, "Mixed with the manager volume");
 		}
 
 		private function testDestruction():void

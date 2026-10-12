@@ -1093,6 +1093,10 @@ package ch.adolio.sound
 		 */
 		public function set manager(value:SoundManager):void
 		{
+			// Already in this sound manager
+			if (value == _manager)
+				return;
+
 			// Remove sound from previous sound manager
 			if (_manager)
 				_manager.removeSoundInstance(this);
