@@ -258,59 +258,6 @@ package ch.adolio.sound
 		//---------------------------------------------------------------------
 
 		/**
-		 * Find next zero crossing position.
-		 *
-		 * This method checks both channels at the same time.
-		 */
-		private static function findZeroCrossingPosition(bytes:ByteArray, startPosition:uint = 0):uint
-		{
-			// Store bytes array initial position
-			var initialPosition:uint = bytes.position;
-
-			// Setup starting position
-			bytes.position = startPosition;
-
-			// Not enough bytes to read two float
-			if (bytes.position + 8 >= bytes.length)
-				return 0;
-
-			// Setup
-			var zeroCrossingPosition:uint = 0;
-			var l0:Number = bytes.readFloat();
-			var r0:Number = bytes.readFloat();
-
-			// Look for zero-crossing for both side (stereo)
-			while (bytes.position + 8 < bytes.length)
-			{
-				var l1:Number = bytes.readFloat();
-				var r1:Number = bytes.readFloat();
-
-				// Find zero crossing on both side
-				if (l0 > 0 && l1 < 0 || l0 < 0 && l1 > 0 || l1 == 0 && r0 > 0 && r1 < 0 || r0 < 0 && r1 > 0 || r1 == 0)
-				{
-					zeroCrossingPosition = bytes.position;
-					break;
-				}
-			}
-
-			// Reset position
-			bytes.position = initialPosition;
-			return zeroCrossingPosition;
-		}
-
-		/**
-		 * Fill a given ByteArray with blank samples.
-		 */
-		private static function fillBlank(bytes:ByteArray, samples:int):void
-		{
-			for (var s:int = 0; s < samples; ++s)
-			{
-				bytes.writeFloat(0);
-				bytes.writeFloat(0);
-			}
-		}
-
-		/**
 		 * Data sampling handler.
 		 *
 		 * <p>

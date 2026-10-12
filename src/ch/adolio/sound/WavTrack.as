@@ -44,7 +44,6 @@ package ch.adolio.sound
 		private var _fmtBitsPerSample:int;
 
 		// Data
-		private var _dataSize:uint; // In bytes
 		private var _dataSource:ByteArray; // Original data
 		private var _dataStartPosition:uint; // Bytes position where data starts
 		private var _length:Number; // In milliseconds
@@ -52,9 +51,6 @@ package ch.adolio.sound
 		private var _samplesGroupCount:uint; // Number of samples in data (all channels included)
 		private var _predecoding:Boolean; // Allow to pre-convert bytes to IEEE float, two channels, 44'100 Hz for faster data extraction
 		private var _decodedData:ByteArray; // In standard flash format: IEEE float, two channels, 44'100 Hz
-
-		// Fact
-		private var _samplePerChannel:int;
 
 		// Extraction method
 		private var _extractFunc:Function;
@@ -214,7 +210,6 @@ package ch.adolio.sound
 				// Setup data info
 				_dataSource = data;
 				_dataStartPosition = data.position;
-				_dataSize = size;
 
 				// Compute length
 				_sampleGroupSize = (_fmtBitsPerSample / 8) * _fmtChannels;
