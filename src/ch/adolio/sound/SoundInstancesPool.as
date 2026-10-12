@@ -30,7 +30,6 @@ package ch.adolio.sound
 
 		// Debug
 		private static const LOG_PREFIX:String = "[Sound Instances Pool]";
-		private var _verbose:Boolean = false;
 
 		/**
 		 * Singleton
@@ -69,9 +68,6 @@ package ch.adolio.sound
 				{
 					++_savedCount;
 
-					if (_verbose)
-						trace(LOG_PREFIX + " Sound Instance acquired from pool. Saved instantiations: " + _savedCount);
-
 					_pool.removeAt(i);
 					sound.isInPool = false;
 					sound.setupFromPool(trackConfig, manager);
@@ -80,9 +76,6 @@ package ch.adolio.sound
 			}
 
 			// Create new one
-			if (_verbose)
-				trace(LOG_PREFIX + " Sound Instance created from pool.");
-
 			sound = new SoundInstance(trackConfig, manager);
 			sound.fromPool = true; // Mark as coming from the pool to restore it later on
 			return sound;
@@ -120,10 +113,6 @@ package ch.adolio.sound
 			sound.resetAfterRelease();
 			sound.isInPool = true;
 			_pool.push(sound);
-
-			// Debug
-			if (_verbose)
-				trace(LOG_PREFIX + " Sound Instance released to pool.");
 
 			return true;
 		}

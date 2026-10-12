@@ -13,7 +13,6 @@ package ch.adolio.sound
 	import flash.errors.IllegalOperationError;
 	import flash.utils.ByteArray;
 	import flash.utils.Endian;
-	import flash.utils.getTimer;
 
 	/**
 	 * Wav sound data wrapper.
@@ -62,7 +61,6 @@ package ch.adolio.sound
 
 		// Debug
 		private static const LOG_PREFIX:String = "[Wave Track]";
-		private var _verbose:Boolean = false;
 
 		/**
 		 * Wav Track Constructor.
@@ -102,10 +100,6 @@ package ch.adolio.sound
 			if (_format != "WAVE")
 				throw new IllegalOperationError(LOG_PREFIX + " Invalid Wave file: the RIFF format is not WAVE.");
 
-			// Debug
-			if (_verbose)
-				trace("	Format: " + _format);
-
 			// Browse chunks
 			var isFormatParsed:Boolean = false;
 			var isDataParsed:Boolean = false;
@@ -115,10 +109,6 @@ package ch.adolio.sound
 				var chunkId:String = data.readUTFBytes(4);
 				var chunkSize:Number = data.readUnsignedInt();
 				var chunkPosition:Number = data.position;
-
-				// Debug
-				if (_verbose)
-					trace(chunkId + " (" + chunkSize + " bytes)");
 
 				// A truncated or corrupted file may declare a chunk bigger than what is left: only the available part is parsed
 				var availableSize:uint = Math.min(chunkSize, data.bytesAvailable);
@@ -198,17 +188,6 @@ package ch.adolio.sound
 			// Max channel format check
 			if (_fmtChannels > 2)
 				throw new IllegalOperationError(LOG_PREFIX + " Unsupported Wave Audio Format: Max 2 channels are supported.");
-
-			// Debug
-			if (_verbose)
-			{
-				trace(" Audio Format: " + _fmtAudioFormat +
-				    "\n Channels: " + _fmtChannels +
-				    "\n Sample Rate: " + _fmtSampleRate +
-				    "\n Byte Rate: " + _fmtByteRate +
-				    "\n Block Align: " + _fmtBlockAlign +
-				    "\n Bits Per Sample: " + _fmtBitsPerSample);
-			}
 		}
 
 		private function parseDataSubChunk(data:ByteArray, size:uint):void
@@ -216,18 +195,11 @@ package ch.adolio.sound
 			// Pre-Decoding
 			if (_predecoding)
 			{
-				// Setup start time to record predecoding time
-				var startTime:int = getTimer();
-
 				// Convert sound to IEEE 32bits two channels
 				if (_fmtAudioFormat == WAVE_FORMAT_PCM)
 					_fmtChannels == 1 ? decodePCM_Mono(data, size) : decodePCM_Stereo(data, size);
 				else
 					_fmtChannels == 1 ? decodeIEEE_Mono(data, size) : decodeIEEE_Stereo(data, size);
-
-				// Print predecoding time
-				if (_verbose)
-					trace(LOG_PREFIX + " Pre-decoding time: " + (getTimer() - startTime) + " ms");
 
 				// Compute length
 				_sampleGroupSize = (32 / 8) * 2; // IEEE 32bits two channels
