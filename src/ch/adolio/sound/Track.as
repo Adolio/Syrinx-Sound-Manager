@@ -34,8 +34,8 @@ package ch.adolio.sound
 		 * Extract samples.
 		 *
 		 * @param target A ByteArray object in which the extracted sound samples are placed.
-		 * @param length The number of sound samples to extract. A sample contains both the left and right channels â€” that is, two 32-bit floating-point values.
-		 * @param startPosition The sample at which extraction begins. If you don't specify a value, the first call to Sound.extract() starts at the beginning of the sound; subsequent calls without a value for startPosition progress sequentially through the file.
+		 * @param length The number of sound samples to extract. A sample contains both the left and right channels, that is two 32-bit floating-point values.
+		 * @param startPosition The sample at which extraction begins. A negative value is only supported by <code>Mp3Track</code>, which then continues from the previous extraction, as <code>Sound.extract()</code> does.
 		 * @return The number of samples written to the ByteArray specified in the target parameter.
 		 */
 		public function extract(target:ByteArray, length:Number, startPosition:Number = -1):Number
