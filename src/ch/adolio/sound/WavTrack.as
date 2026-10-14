@@ -61,9 +61,14 @@ package ch.adolio.sound
 		/**
 		 * Wav Track Constructor.
 		 *
+		 * <p>
+		 * The data is read from its current position: its endianness is set to little endian & its position is moved.
+		 * Without pre-decoding, the track keeps reading its samples from the data, which must not be modified afterwards.
+		 * </p>
+		 *
 		 * @param	data Wav raw data
-		 * @param	predecode Convert data into native format (IEEE float, two channels, 44'100 Hz).
-		 *          This improves preformance when extracting data during sampling.
+		 * @param	predecodeData Convert data into native format (IEEE float, two channels, 44'100 Hz).
+		 *          This improves performance when extracting data during sampling.
 		 *          Down sides: - Conversion may take a while...
 		 *                      - It takes more memory (the converted sound is stored in RAM)
 		 */
@@ -300,7 +305,7 @@ package ch.adolio.sound
 			return _extractFunc(target, samplesToRead, Math.floor(startPosition));
 		}
 
-		public function extractPreDecoded(target:ByteArray, samplesToRead:Number, startPosition:Number = -1):Number
+		private function extractPreDecoded(target:ByteArray, samplesToRead:Number, startPosition:Number = -1):Number
 		{
 			// Read IEEE 32 bits, two channels data
 			_decodedData.position = startPosition * 8;
