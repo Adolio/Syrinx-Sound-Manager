@@ -45,6 +45,11 @@ package ch.adolio.sound
 
 		/**
 		 * Destroy the object and make it unusable.
+		 *
+		 * <p>
+		 * Never called by the library: unregistering a track destroys its configuration only. Destroy a track once no
+		 * Sound Manager uses it anymore.
+		 * </p>
 		 */
 		public function destroy():void
 		{

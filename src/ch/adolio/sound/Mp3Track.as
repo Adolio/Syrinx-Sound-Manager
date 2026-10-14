@@ -27,6 +27,12 @@ package ch.adolio.sound
 			return _nativeSound;
 		}
 
+		/**
+		 * MP3 Track constructor.
+		 *
+		 * @param nativeSound The sound, fully loaded: trimmed or pitched sound instances & automatic trims use the
+		 *        length of the sound at the time they are created, which is incomplete while it loads
+		 */
 		public function Mp3Track(nativeSound:flash.media.Sound)
 		{
 			// Check for argument validity

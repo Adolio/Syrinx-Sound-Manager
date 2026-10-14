@@ -292,6 +292,11 @@ package ch.adolio.sound
 
 		/**
 		 * Unregister a track.
+		 *
+		 * <p>
+		 * Its configuration is destroyed, but not the track itself. The sound instances of the track keep playing until
+		 * they end, while the ones waiting in the pool are destroyed.
+		 * </p>
 		 */
 		public function unregisterTrack(type:String):void
 		{

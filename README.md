@@ -218,6 +218,14 @@ _soundManager.releaseSoundInstanceToPool(mySound);
 
 Releasing a `Sound Instance` which is already in the pool is ignored.
 
+### 🧹 Lifecycle
+
+- **Tracks** belong to the application: the library never destroys them. Unregistering a track, or destroying its `Sound Manager`, destroys its `Track Configuration` only. Call `destroy()` on a track once no `Sound Manager` uses it anymore.
+- **Unregistering a track** doesn't stop its sounds: the ones playing keep playing until they end, while the ones waiting in the pool are destroyed. A pooled sound still playing goes back to the pool when it ends & keeps the track there.
+- **MP3 tracks** must wrap a fully loaded `Sound`: trimmed or pitched sounds & automatic trims use the length of the sound at the time they are created, which is incomplete while it loads.
+- **WAV data** given to a `WavTrack` must not be modified afterwards, unless the track is pre-decoded: the track keeps reading its samples from it.
+- **Destroyed objects** must not be used anymore: a destroyed `Sound Manager` or `Sound Instance`, or the `Track Configuration` of an unregistered track. Nor a `Sound Instance` released to the pool, which may already be playing for someone else.
+
 ### 🚦 Sound channels limit
 
 Adobe AIR plays at most 32 sounds at the same time, all `Sound Managers` together. A `Sound Manager` can be limited further with `maxChannelCapacity`, which is 32 by default.
