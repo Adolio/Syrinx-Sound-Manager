@@ -13,7 +13,7 @@ by Aurélien Da Campo ([Adolio](https://twitter.com/AurelienDaCampo))
 
 ## ▶️ Try it!
 
-Go to the [demo](./demo/) folder, configure the project & run it or if you get the latest [release](https://github.com/Adolio/AS3-Sound-Manager/releases), the demo binary should be available in the archive.
+Go to the [demo](./demo/) folder, configure the project & run it or if you get the latest [release](https://github.com/Adolio/Syrinx-Sound-Manager/releases), the demo binary should be available in the archive.
 
 ## 📄 Full features
 
@@ -25,7 +25,7 @@ Go to the [demo](./demo/) folder, configure the project & run it or if you get t
 	- **Track configuration**
 		- Type
 		- Base volume (for mastering)
-		- Sampling rate
+		- Sampling (samples fed per sampling request)
 		- Trimming (start / end)
 			- Automatic trimming detection
 	- Sound instantiation from registered tracks
@@ -33,7 +33,6 @@ Go to the [demo](./demo/) folder, configure the project & run it or if you get t
 			- Starting volume
 			- Starting position
 			- Loop & infinite looping
-			- Starting paused
 	- Sound format modularity
 		- Supported formats:
 			- MP3
@@ -51,6 +50,7 @@ Go to the [demo](./demo/) folder, configure the project & run it or if you get t
 		- Track unregistered
 		- Sound instance added
 		- Sound instance removed
+		- Sound instance released to pool
 - **Sound Instance**
 	- Controls
 		- Execution (play / pause / resume / stop)
@@ -62,11 +62,11 @@ Go to the [demo](./demo/) folder, configure the project & run it or if you get t
 	- Status & configuration
 		- Length
 		- Total length (incl. loops)
-		- Volume / Mixed volume
+		- Volume / Base volume / Mixed volume
 		- Is muted?
 		- Pan
 		- Pitch
-		- Loops / remaining loops
+		- Loops / current loop / remaining loops
 		- Position (time & ratio)
 		- Remaining time
 		- Is playing?
@@ -85,7 +85,7 @@ Go to the [demo](./demo/) folder, configure the project & run it or if you get t
 
 ### 📻 Sound Manager
 
-Main class to register tracks & instantiate sounds. The following example registers two tracks (MP3 & Wav), setups the trimming & sampling options.
+Main class to register tracks & instantiate sounds. The following example registers two tracks (MP3 & Wav), sets up the trimming & sampling options.
 Then three sounds are instantiated.
 
 ```actionscript
@@ -100,7 +100,7 @@ public function SoundManagerExample()
 	// Create Sound Manager
 	_soundManager = new SoundManager();
 	_soundManager.maxChannelCapacity = 8; // Limit number of simultaneous playing sounds (for this sound manager only)
-	_soundManager.isPoolingEnabled = true; // Enable pooling to re-used already instantiated sounds and reduce GC impacts
+	_soundManager.isPoolingEnabled = true; // Enable pooling to reuse already instantiated sounds and reduce GC impacts
 
 	// Register sounds
 	var engineSoundMp3Config:TrackConfiguration = _soundManager.registerTrack("Engine 1", new Mp3Track(new EngineSoundMp3())); // Register a MP3 track
@@ -109,11 +109,11 @@ public function SoundManagerExample()
 	// Trimming configuration
 	engineSoundMp3Config.findTrim(0.01); // Find start & end trim durations to remove silences inherent to mp3 format (with a silent threshold of 0.01)
 
-	// Sampling rate configuration
-	engineSoundWavConfig.sampling = 4096; // This defines how much samples are read per sampling request. The value must be between 2048 (included) and 8192 (included).
+	// Sampling configuration
+	engineSoundWavConfig.sampling = 4096; // This defines how many samples are read per sampling request. The value must be between 2048 (included) and 8192 (included).
 
 	// Base volume configuration for mastering
-	engineSoundMp3Config.baseVolume = 0.5; // Custom mastering at track configuration level, the sound can now be player at 1.0 but will still be influenced by this mastering.
+	engineSoundMp3Config.baseVolume = 0.5; // Custom mastering at track configuration level, the sound can now be played at 1.0 but will still be influenced by this mastering.
 
 	// Play sounds
 	var engine1_once:SoundInstance = _soundManager.play("Engine 1", 1.0); // Play once
@@ -130,7 +130,7 @@ public function SoundManagerExample()
 Instance of a sound that can be controlled. The following example shows how to listen to sound events, how to control a sound and how to get various information about it.
 
 ```actionscript
-var si:SoundInstance = _soundManager.play("Engine 1", 1.0, 1337, 5); // Play at max volume, starting at 1,337 sec., 6 times (looping 5 times)
+var si:SoundInstance = _soundManager.play("Engine 1", 1.0, 1337, 5); // Play at max volume, starting at 1337 ms, 6 times (looping 5 times)
 
 //-----------------------------------------------------------------------------
 //-- Events
@@ -151,11 +151,11 @@ si.destroyed.add(function (si:SoundInstance):void { trace("Sound destroyed. " + 
 si.pause();
 si.resume();
 si.stop();
-si.play(0.5, 0, 1.0); // (Re)play twice (repeat once)
+si.play(0.5, 0, 1); // (Re)play twice (repeat once)
 
 // Position
 si.position = 1337; // In milliseconds
-si.positionRatio = 0.5; // This includes the loops so here it will play only the second loop!
+si.positionRatio = 0.5; // Loops included: with 6 plays, 0.5 is the start of the fourth one
 
 // Mute
 si.isMuted = true;
@@ -169,8 +169,8 @@ si.volume = 0.8;
 si.pan = -0.5; // Half left
 
 // Pitch
-si.pitch = 0.8; // 20% slower
-si.pitch = 1.2; // 20% faster
+si.pitch = 0.8; // 20% slower & lower
+si.pitch = 1.2; // 20% faster & higher
 si.pitch = 1.0; // Back to default
 
 //-----------------------------------------------------------------------------
@@ -178,14 +178,14 @@ si.pitch = 1.0; // Back to default
 //-----------------------------------------------------------------------------
 trace("Type: " + si.type); // Type
 trace("Volume: " + si.volume); // Volume
-trace("Mixed volume: " + si.mixedVolume); // Equals to _soundManager.volume * volume
+trace("Mixed volume: " + si.mixedVolume); // Equals to _soundManager.volume * si.baseVolume * si.volume
 trace("Pan: " + si.pan); // Pan
 trace("Pitch: " + si.pitch); // Pitch
 trace("Sound length: " + si.length); // One loop length in milliseconds (trimmed)
-trace("Sound total length: " + si.totalLength); // Total length in milliseconds (including loops & trim durations)
+trace("Sound total length: " + si.totalLength); // Total length in milliseconds (trimmed, loops included)
 trace("Loops: " + si.loops); // Total loops
-trace("Current loop: " + si.currentLoop); // Current loop (-1 = infinite, 0 = first play, 1 = second play, etc.)
-trace("Remaining loops: " + si.loopsRemaining); // Remaining loops
+trace("Current loop: " + si.currentLoop); // Loop being heard (0 = first play, 1 = second play, etc.)
+trace("Remaining loops: " + si.loopsRemaining); // Remaining loops (-1 = infinite)
 trace("Remaining time: " + si.remainingTime); // Remaining time in milliseconds
 trace("Current position: " + si.position); // Current position in milliseconds
 trace("Current position (ratio): " + si.positionRatio); // Current position (ratio, between 0..1)
@@ -198,7 +198,7 @@ trace("Is destroyed: " + si.isDestroyed); // Is destroyed?
 
 ### ♻️ Sound Instances Pooling
 
-Pooling can significantly reduce memory consumption by re-using already instantiated `Sound Instances`. This should also minimize lags caused by the `Garbage Collector` passage. Therefore this capability could be pretty useful when playing a lot of identical sounds in your application (e.g. player footsteps, arrows thrown by an army of archers, etc.).
+Pooling reuses already instantiated `Sound Instances` instead of creating new ones. This reduces allocations & therefore the lags caused by the `Garbage Collector` passage, at the cost of keeping the released instances in memory. Therefore this capability could be pretty useful when playing a lot of identical sounds in your application (e.g. player footsteps, arrows thrown by an army of archers, etc.).
 
 The pooling capability can be enabled this way:
 
@@ -246,10 +246,10 @@ When a sound cannot get a sound channel:
 ### 💡 Recommendations
 
 - A `Track Configuration` is read when a `Sound Instance` is created: changing its base volume, trims or sampling afterwards only applies to the sounds played afterwards. To change the base volume of a sound already playing, set the `baseVolume` of its `Sound Instance`.
-- Standard sounds (MP3 Tracks without trimming neither pitching options set) are treated as normal flash sound (no custom data sampling required) which provides better overall performance over advanced sounds processing. Sampling rate is therefore ignored for those sounds.
+- Standard sounds (MP3 Tracks without trimming nor pitching options set) are treated as normal flash sound (no custom data sampling required) which provides better overall performance over advanced sounds processing. Sampling is therefore ignored for those sounds.
 - Wav file format is recommended for seamless looping sound since MP3 format introduces silent parts at the beginning & the end of the track.
 	- Another option could be to use MP3 & configure trimming durations either manually or by using the `TrackConfiguration.findTrim()` utility method.
-- Use higher sampling rate for tracks that require more robustness against frame drop (e.g. during loading).
+- The sampling is the number of samples fed per sampling request, from 2048 to 8192 (about 46 to 186 ms of sound). Use a higher sampling for tracks that require more robustness against frame drop (e.g. during loading): more sound is fed ahead, so pitch changes are heard later.
 
 ## 📦 How to install?
 
