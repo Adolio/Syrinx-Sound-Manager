@@ -246,7 +246,7 @@ package ch.adolio.sound
 
 		public function updatePoolInfoLabel():void
 		{
-			_poolInfoLabel.text = "Pool info (acquired: " + SoundInstancesPool.instance.acquiredCount + ", released: " + SoundInstancesPool.instance.releaseCount + ", capacity: " + SoundInstancesPool.instance.capacity + ")";
+			_poolInfoLabel.text = "Pool info (acquired: " + SoundInstancesPool.instance.acquiredCount + ", released: " + SoundInstancesPool.instance.releaseCount + ", available: " + SoundInstancesPool.instance.availableCount + ")";
 		}
 
 		private function onLoadMp3SoundTriggered(event:starling.events.Event):void

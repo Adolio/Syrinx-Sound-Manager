@@ -92,18 +92,18 @@ package ch.adolio.sound.test
 			var manager:SoundManager = createManager(true);
 			var si:SoundInstance = manager.play("short");
 			assertPlaying(si);
-			var capacity:uint = pool.capacity;
+			var availableCount:uint = pool.availableCount;
 			si.completed.add(function(instance:SoundInstance):void
 			{
 				attempt(function():void
 				{
-					Assert.equalsInt(pool.capacity, capacity, "Not released yet for the completed listeners");
+					Assert.equalsInt(pool.availableCount, availableCount, "Not released yet for the completed listeners");
 					Assert.isTrue(si.manager == manager, "Still in its manager for the completed listeners");
 				});
 
 				defer(function():void
 				{
-					Assert.equalsInt(pool.capacity, capacity + 1, "Released once the completed listeners are called");
+					Assert.equalsInt(pool.availableCount, availableCount + 1, "Released once the completed listeners are called");
 					Assert.isNull(si.manager, "Removed from its manager once released");
 					next();
 				});

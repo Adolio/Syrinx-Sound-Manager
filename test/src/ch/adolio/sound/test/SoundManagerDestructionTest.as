@@ -62,7 +62,7 @@ package ch.adolio.sound.test
 			var pool:SoundInstancesPool = SoundInstancesPool.instance;
 			var manager:SoundManager = createManager(true);
 			var config:TrackConfiguration = registerTone(manager);
-			var capacity:uint = pool.capacity;
+			var availableCount:uint = pool.availableCount;
 			var si1:SoundInstance = manager.play(config.type, 1, 0, -1);
 			var si2:SoundInstance = manager.play(config.type, 1, 0, -1);
 
@@ -75,7 +75,7 @@ package ch.adolio.sound.test
 			Assert.isFalse(si1.isPlaying, "First pooled instance stopped");
 			Assert.isTrue(si1.isDestroyed, "First pooled instance destroyed");
 			Assert.isTrue(si2.isDestroyed, "Second pooled instance destroyed");
-			Assert.equalsInt(pool.capacity, capacity, "No instance of the destroyed manager left in the pool");
+			Assert.equalsInt(pool.availableCount, availableCount, "No instance of the destroyed manager left in the pool");
 			Assert.equalsInt(manager.getSoundInstancesCount(), 0, "No instance left");
 		}
 

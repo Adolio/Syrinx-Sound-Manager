@@ -88,10 +88,10 @@ package ch.adolio.sound.test
 			manager.registerTrack(type, ProbeTrack.tone(1000));
 			manager.play(type, 1, 0, -1);
 
-			var capacity:uint = pool.capacity;
+			var availableCount:uint = pool.availableCount;
 			var si:SoundInstance = manager.play(type);
 			Assert.isFalse(si.isDestroyed, "Pooled instance not destroyed when skipped");
-			Assert.equalsInt(pool.capacity, capacity + 1, "Skipped instance released to the pool");
+			Assert.equalsInt(pool.availableCount, availableCount + 1, "Skipped instance released to the pool");
 			Assert.equalsInt(manager.getSoundInstancesCount(), 1, "Only the playing sound kept by the manager");
 
 			manager.releaseAllSoundInstancesToPool();

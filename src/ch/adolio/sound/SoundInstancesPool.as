@@ -146,9 +146,22 @@ package ch.adolio.sound
 			}
 		}
 
-		public function get capacity():uint
+		/**
+		 * Number of sound instances waiting in the pool to be acquired.
+		 */
+		public function get availableCount():uint
 		{
 			return _pool.length;
+		}
+
+		/**
+		 * Number of sound instances waiting in the pool to be acquired, despite its name: the pool has no capacity.
+		 * Deprecated, replaced by <code>availableCount</code>, which returns the same value.
+		 */
+		[Deprecated(replacement="availableCount", since="0.7")]
+		public function get capacity():uint
+		{
+			return availableCount;
 		}
 
 		public function get acquiredCount():uint

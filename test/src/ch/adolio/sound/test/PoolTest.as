@@ -67,7 +67,7 @@ package ch.adolio.sound.test
 			var pool:SoundInstancesPool = SoundInstancesPool.instance;
 			var manager:SoundManager = createManager();
 			var si:SoundInstance = pool.acquireSound(registerTone(manager), manager);
-			var capacity:uint = pool.capacity;
+			var availableCount:uint = pool.availableCount;
 			var releaseCount:uint = pool.releaseCount;
 
 			var releasedToPool:int = 0;
@@ -89,7 +89,7 @@ package ch.adolio.sound.test
 			Assert.equalsInt(manager.getSoundInstancesCount(), 0, "Removed from the manager");
 			Assert.isNull(si.manager, "Manager released");
 			Assert.isFalse(si.isDestroyed, "Not destroyed");
-			Assert.equalsInt(pool.capacity, capacity + 1, "Pool capacity");
+			Assert.equalsInt(pool.availableCount, availableCount + 1, "Instances available in the pool");
 			Assert.equalsInt(pool.releaseCount, releaseCount + 1, "Release count");
 
 			// Signals are cleared on release
@@ -110,11 +110,11 @@ package ch.adolio.sound.test
 
 			var manager2:SoundManager = createManager();
 			var savedCount:uint = pool.savedCount;
-			var capacity:uint = pool.capacity;
+			var availableCount:uint = pool.availableCount;
 			var recycled:SoundInstance = pool.acquireSound(config, manager2);
 			Assert.isTrue(recycled == si, "Instance recycled");
 			Assert.equalsInt(pool.savedCount, savedCount + 1, "Saved count");
-			Assert.equalsInt(pool.capacity, capacity - 1, "Pool capacity");
+			Assert.equalsInt(pool.availableCount, availableCount - 1, "Instances available in the pool");
 			Assert.isTrue(recycled.manager == manager2, "Added to the new manager");
 			Assert.equalsInt(manager2.getSoundInstancesCount(), 1, "New manager holds the instance");
 			Assert.isTrue(recycled.isFromPool, "Still from pool");
@@ -178,10 +178,10 @@ package ch.adolio.sound.test
 			for (var i:int = 0; i < 3; ++i)
 				pool.acquireSound(config, manager);
 
-			var capacity:uint = pool.capacity;
+			var availableCount:uint = pool.availableCount;
 			manager.releaseAllSoundInstancesToPool();
 			Assert.equalsInt(manager.getSoundInstancesCount(), 0, "All instances removed from the manager");
-			Assert.equalsInt(pool.capacity, capacity + 3, "All instances released to the pool");
+			Assert.equalsInt(pool.availableCount, availableCount + 3, "All instances released to the pool");
 		}
 
 		private function testSecondReleaseIgnored():void
@@ -190,7 +190,7 @@ package ch.adolio.sound.test
 			var manager:SoundManager = createManager();
 			var config:TrackConfiguration = registerTone(manager);
 			var si:SoundInstance = pool.acquireSound(config, manager);
-			var capacity:uint = pool.capacity;
+			var availableCount:uint = pool.availableCount;
 			var releaseCount:uint = pool.releaseCount;
 			var releasedToPool:int = 0;
 			manager.soundInstanceReleasedToPool.add(function(instance:SoundInstance, releasePool:SoundInstancesPool):void { releasedToPool++; });
@@ -198,7 +198,7 @@ package ch.adolio.sound.test
 			manager.releaseSoundInstanceToPool(si);
 			manager.releaseSoundInstanceToPool(si);
 			pool.releaseSound(si);
-			Assert.equalsInt(pool.capacity, capacity + 1, "Instance pooled once");
+			Assert.equalsInt(pool.availableCount, availableCount + 1, "Instance pooled once");
 			Assert.equalsInt(pool.releaseCount, releaseCount + 1, "Release counted once");
 			Assert.equalsInt(releasedToPool, 1, "Sound instance released to pool signal dispatched once");
 
@@ -243,12 +243,12 @@ package ch.adolio.sound.test
 			var config:TrackConfiguration = registerTone(manager);
 			var si1:SoundInstance = pool.acquireSound(config, manager);
 			var si2:SoundInstance = pool.acquireSound(config, manager);
-			var capacity:uint = pool.capacity;
+			var availableCount:uint = pool.availableCount;
 			manager.releaseAllSoundInstancesToPool();
-			Assert.equalsInt(pool.capacity, capacity + 2, "Instances pooled");
+			Assert.equalsInt(pool.availableCount, availableCount + 2, "Instances pooled");
 
 			manager.unregisterTrack(config.type);
-			Assert.equalsInt(pool.capacity, capacity, "Pooled instances of the unregistered track dropped");
+			Assert.equalsInt(pool.availableCount, availableCount, "Pooled instances of the unregistered track dropped");
 			Assert.isTrue(si1.isDestroyed, "First pooled instance destroyed");
 			Assert.isTrue(si2.isDestroyed, "Second pooled instance destroyed");
 		}
@@ -260,10 +260,10 @@ package ch.adolio.sound.test
 			var config:TrackConfiguration = registerTone(manager);
 			var si:SoundInstance = pool.acquireSound(config, manager);
 			manager.releaseSoundInstanceToPool(si);
-			var capacity:uint = pool.capacity;
+			var availableCount:uint = pool.availableCount;
 
 			si.destroy();
-			Assert.equalsInt(pool.capacity, capacity - 1, "Destroyed instance removed from the pool");
+			Assert.equalsInt(pool.availableCount, availableCount - 1, "Destroyed instance removed from the pool");
 
 			var other:SoundInstance = pool.acquireSound(config, manager);
 			Assert.isFalse(other == si, "Destroyed instance not recycled");
@@ -279,10 +279,10 @@ package ch.adolio.sound.test
 			var si:SoundInstance = pool.acquireSound(registerTone(manager), manager);
 			si.destroy();
 
-			var capacity:uint = pool.capacity;
+			var availableCount:uint = pool.availableCount;
 			Assert.throws(ArgumentError, function():void { pool.releaseSound(null); }, "Null instance released");
 			Assert.throws(ArgumentError, function():void { pool.releaseSound(si); }, "Destroyed instance released");
-			Assert.equalsInt(pool.capacity, capacity, "Rejected instances not pooled");
+			Assert.equalsInt(pool.availableCount, availableCount, "Rejected instances not pooled");
 		}
 
 		private function testPoolingDisabled():void
@@ -303,12 +303,12 @@ package ch.adolio.sound.test
 			var manager:SoundManager = createManager();
 			var config:TrackConfiguration = manager.registerTrack("pool-test-" + (_typeCount++), new ProbeTrack(new Vector.<Number>()));
 			var si:SoundInstance = pool.acquireSound(config, manager);
-			var capacity:uint = pool.capacity;
+			var availableCount:uint = pool.availableCount;
 
 			manager.isPoolingEnabled = false;
 			si.play();
 			Assert.isTrue(si.isDestroyed, "Pooled instance destroyed on completion once pooling is disabled");
-			Assert.equalsInt(pool.capacity, capacity, "Nothing released to the pool once pooling is disabled");
+			Assert.equalsInt(pool.availableCount, availableCount, "Nothing released to the pool once pooling is disabled");
 			Assert.equalsInt(manager.getSoundInstancesCount(), 0, "Removed from the manager on completion");
 		}
 
