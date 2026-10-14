@@ -23,23 +23,5 @@
 	"application": "application.xml",
 	"files": [
 		"src/ch/adolio/Main.as"
-	],
-	"airOptions": {
-		"windows": {
-			"target": "native",
-			"output": "bin/Syrinx-Sound-Manager-Demo.exe",
-			"signingOptions": {
-				"storetype": "pkcs12",
-				"keystore": "cert/syrinx-demo.p12"
-			}
-		},
-		"air":
-		{
-			"output": "bin/Syrinx-Sound-Manager-Demo.air",
-			"signingOptions": {
-				"storetype": "pkcs12",
-				"keystore": "cert/syrinx-demo.p12"
-			}
-		}
-	}
+	]
 }

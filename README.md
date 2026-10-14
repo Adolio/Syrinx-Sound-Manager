@@ -13,7 +13,7 @@ by Aurélien Da Campo ([Adolio](https://twitter.com/AurelienDaCampo))
 
 ## ▶️ Try it!
 
-Go to the [demo](./demo/) folder, configure the project & run it or if you get the latest [release](https://github.com/Adolio/Syrinx-Sound-Manager/releases), the demo binary should be available in the archive.
+Go to the [demo](./demo/) folder, configure the project & run it.
 
 ## 📄 Full features
 
