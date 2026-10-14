@@ -269,6 +269,19 @@ or
 
 Don't forget to include dependencies (see below).
 
+## 🔨 How to build?
+
+The project is set up for Visual Studio Code with the ActionScript & MXML extension.
+
+The AIR SDK path set in the `.vscode/settings.json` files (root, `demo` & `test`) is the one of the author: change `as3mxml.sdk.framework` to your own AIR SDK path locally, without committing it.
+
+The projects can also be built from a terminal, from the repository root:
+
+```powershell
+npx --yes asconfigc --sdk <air-sdk-path> --project asconfig.json       # library (SWC)
+npx --yes asconfigc --sdk <air-sdk-path> --project demo/asconfig.json  # demo
+```
+
 ## 🧪 Tests
 
 The `test` folder holds the automated tests of the library. See [test/README.md](test/README.md) to build & run them.
@@ -283,7 +296,8 @@ The `test` folder holds the automated tests of the library. See [test/README.md]
 
 ## 🔗 Minimum Requirements
 
-- Adobe AIR 32.0 in order to fix crackling artifacts: https://github.com/Gamua/Adobe-Runtime-Support/issues/46
+- AIR SDK 33.1 or later (tested with 33.1 & 51.4)
+- Adobe AIR 32.0 fixed crackling artifacts of custom sampled sounds: https://github.com/Gamua/Adobe-Runtime-Support/issues/46
 
 ## 🖇 Dependencies (included in `libs` folder)
 
