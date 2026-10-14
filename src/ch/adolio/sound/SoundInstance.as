@@ -11,7 +11,6 @@
 package ch.adolio.sound
 {
 	import flash.events.Event;
-	import flash.events.EventDispatcher;
 	import flash.events.SampleDataEvent;
 	import flash.media.SoundChannel;
 	import flash.media.SoundTransform;
@@ -24,7 +23,7 @@ package ch.adolio.sound
 	 *
 	 * @author Aurelien Da Campo
 	 */
-	public class SoundInstance extends EventDispatcher
+	public class SoundInstance
 	{
 		// Const
 		public static const VOLUME_MIN:Number = 0;
