@@ -91,11 +91,11 @@ package ch.adolio.sound
 		{
 			// Check for `null` sound instance
 			if (!sound)
-				throw ArgumentError("A `null` sound instance cannot be released");
+				throw new ArgumentError(LOG_PREFIX + " A `null` sound instance cannot be released.");
 
 			// Check for invalid sound instance
 			if (sound.isDestroyed)
-				throw ArgumentError("A destroyed sound instance cannot be released.");
+				throw new ArgumentError(LOG_PREFIX + " A destroyed sound instance cannot be released.");
 
 			// Pooled twice, the sound instance would be acquired twice
 			if (sound.isInPool)
