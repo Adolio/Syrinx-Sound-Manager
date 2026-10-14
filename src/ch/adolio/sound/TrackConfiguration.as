@@ -15,6 +15,12 @@ package ch.adolio.sound
 	/**
 	 * Track configuration
 	 *
+	 * <p>
+	 * A sound instance copies the base volume, the trims & the sampling of its track configuration when it is created
+	 * or taken from the pool: later changes only apply to the sound instances created afterwards. The base volume of an
+	 * existing sound instance can be changed through its own <code>baseVolume</code>.
+	 * </p>
+	 *
 	 * @author Aurelien Da Campo
 	 */
 	public class TrackConfiguration
