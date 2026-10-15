@@ -26,3 +26,15 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 The views and conclusions contained in the software and documentation are those of the
 authors and should not be interpreted as representing official policies, either expressed
 or implied, of Adolio.
+
+Third-party content
+-------------------
+
+This license covers the source code of Syrinx. The following content of this repository is
+distributed under its own license:
+
+- The libraries in `libs` & `demo/libs`: see `libs/README.md` & `demo/libs/README.md`.
+- The demo sounds in `demo/media/sounds`, derived from "Steinway cinematic phasing intro piano"
+  by XHALE303 (https://freesound.org/people/XHALE303/sounds/440931/): Creative Commons
+  Attribution-NonCommercial 3.0 (https://creativecommons.org/licenses/by-nc/3.0/), which does
+  not allow commercial use.
