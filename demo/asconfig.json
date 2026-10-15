@@ -3,8 +3,8 @@
 	"compilerOptions": {
 		"output": "bin/Syrinx-Sound-Manager-Demo.swf",
 		"library-path": [
-			"libs/starling.swc",
-			"libs/feathers.swc",
+			"libs/starling-2.8.swc",
+			"libs/feathers-4.1.1.swc",
 			"libs/AeonDesktopTheme.swc",
 			"libs/MinimalDesktopTheme.swc",
 			"libs/MetalWorksDesktopTheme.swc",
