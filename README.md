@@ -301,4 +301,4 @@ The `test` folder holds the automated tests of the library. See [test/README.md]
 
 ## 🖇 Dependencies (included in `libs` folder)
 
-- AS3 Signals: https://github.com/robertpenner/as3-signals
+- [AS3 Signals](https://github.com/robertpenner/as3-signals) 0.9, under the MIT License: see [libs/README.md](libs/README.md)
