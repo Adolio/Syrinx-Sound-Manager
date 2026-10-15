@@ -40,7 +40,6 @@ package ch.adolio.sound
 		// control
 		private var _loopStepper:NumericStepper;
 		private var _startPositionTextInput:TextInput;
-		//private var _startVolumeSlider:Slider; // TODO
 		private var _playButton:Button;
 		private var _unregisterButton:Button;
 
@@ -159,8 +158,13 @@ package ch.adolio.sound
 		{
 			_trackConfiguration.findTrim();
 
-			_trimStartTextInput.text = _trackConfiguration.trimStartDuration.toString(); // TODO silent!
-			_trimEndTextInput.text = _trackConfiguration.trimEndDuration.toString(); // TODO silent!
+			// Show the trims found, without applying them back to the configuration
+			_trimStartTextInput.removeEventListener(Event.CHANGE, onTrimStartDurationChanged);
+			_trimEndTextInput.removeEventListener(Event.CHANGE, onTrimEndDurationChanged);
+			_trimStartTextInput.text = _trackConfiguration.trimStartDuration.toString();
+			_trimEndTextInput.text = _trackConfiguration.trimEndDuration.toString();
+			_trimStartTextInput.addEventListener(Event.CHANGE, onTrimStartDurationChanged);
+			_trimEndTextInput.addEventListener(Event.CHANGE, onTrimEndDurationChanged);
 		}
 
 		private function onPlayButtonTriggered():void

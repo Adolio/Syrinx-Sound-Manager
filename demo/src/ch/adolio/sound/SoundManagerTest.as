@@ -108,13 +108,13 @@ package ch.adolio.sound
 			//-- Title
 			//-----------------------------------------------------------------
 
-			// Volume label
-			var titleLable:Label = new Label();
-			titleLable.text = "Syrinx - Sound Manager Demo";
-			titleLable.x = 8;
-			titleLable.y = 16;
-			titleLable.validate();
-			addChild(titleLable);
+			// Title label
+			var titleLabel:Label = new Label();
+			titleLabel.text = "Syrinx - Sound Manager Demo";
+			titleLabel.x = 8;
+			titleLabel.y = 16;
+			titleLabel.validate();
+			addChild(titleLabel);
 
 			//-----------------------------------------------------------------
 			//-- Sound Manager
@@ -124,7 +124,7 @@ package ch.adolio.sound
 			var masterVolumeLabel:Label = new Label();
 			masterVolumeLabel.text = "Master volume";
 			masterVolumeLabel.x = 8;
-			masterVolumeLabel.y = titleLable.y + titleLable.height + 16;
+			masterVolumeLabel.y = titleLabel.y + titleLabel.height + 16;
 			masterVolumeLabel.validate();
 			addChild(masterVolumeLabel);
 

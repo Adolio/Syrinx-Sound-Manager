@@ -27,7 +27,7 @@ package ch.adolio.sound
 
 	public class SoundInstanceEntry extends Sprite implements IAnimatable
 	{
-		public var _soundInstance:SoundInstance;
+		private var _soundInstance:SoundInstance;
 
 		private var _soundNameLabel:Label;
 		private var _pauseResumeButton:Button;
@@ -40,8 +40,8 @@ package ch.adolio.sound
 		private var _panSlider:Slider;
 		private var _pitchSlider:Slider;
 
-		public var _isPositionSliderGrabbed:Object;
-		public var _wasPlayingWhenGrabbed:Object;
+		private var _isPositionSliderGrabbed:Boolean = false;
+		private var _wasPlayingWhenGrabbed:Boolean = false;
 
 		public var playStatusUpdated:Signal = new Signal(SoundInstanceEntry);
 
@@ -180,8 +180,10 @@ package ch.adolio.sound
 			// Enable / disable position slider according looping options
 			_positionSlider.isEnabled = _soundInstance.loopsRemaining != -1;
 
-			// Update UI volume
-			_volumeSlider.value = _soundInstance.volume; // TODO Do it silently to avoid re-updating the value
+			// Update UI volume, without applying it back to the sound
+			_volumeSlider.removeEventListener(Event.CHANGE, onVolumeValueChanged);
+			_volumeSlider.value = _soundInstance.volume;
+			_volumeSlider.addEventListener(Event.CHANGE, onVolumeValueChanged);
 
 			playStatusUpdated.dispatch(this);
 		}
