@@ -532,7 +532,6 @@ package ch.adolio.sound
 					// Start a new sampling
 					_hasFedSamples = false;
 					++_samplingId;
-					_channelStartTime = startTime;
 					_fedSamplesCount = 0;
 					_readingSegments.length = 0;
 					openReadingSegment();
@@ -566,6 +565,9 @@ package ch.adolio.sound
 				}
 				else
 				{
+					// A channel starts from a whole sample, which can be before the requested time
+					_channelStartTime = _channel.position;
+
 					// Listen to sound completion
 					_channel.addEventListener(Event.SOUND_COMPLETE, onSoundComplete);
 				}

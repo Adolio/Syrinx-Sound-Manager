@@ -32,6 +32,7 @@ package ch.adolio.sound.test
 			testPlayPauseResumeStop();
 			testLoopsSetup();
 			testPositionChanges();
+			testPausedBeforePlaybackAdvances();
 			testPanAndVolumeKeptWhileMuted();
 			testStopAll();
 			testStopAllWithListenersFreeingInstances();
@@ -150,6 +151,27 @@ package ch.adolio.sound.test
 
 			si.resume();
 			assertPlaying(si, "Resumed after a position change");
+
+			manager.destroyAllSoundInstances();
+		}
+
+		private function testPausedBeforePlaybackAdvances():void
+		{
+			var manager:SoundManager = createManager();
+			manager.registerTrack("tone", ProbeTrack.tone(1000));
+
+			// Start times between two samples: the channel starts from the previous whole sample
+			var si:SoundInstance = manager.play("tone", 1, 0.01, -1);
+			si.pause();
+			Assert.equalsNumber(si.position, 0, EPSILON, "Position when started within the first sample");
+			si.resume();
+			assertPlaying(si, "Resumed when started within the first sample");
+
+			si.play(1, 12.5, -1);
+			si.pause();
+			Assert.equalsNumber(si.position, 551 / 44.1, EPSILON, "Position when started between two samples");
+			si.resume();
+			assertPlaying(si, "Resumed when started between two samples");
 
 			manager.destroyAllSoundInstances();
 		}
