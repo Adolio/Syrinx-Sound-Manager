@@ -1,5 +1,9 @@
 # Syrinx - Sound Manager: Changelog
 
+## v0.7.1 (2026-11-01)
+
+- Sound Instance: Fixed the negative position of custom sampled sounds paused before their playback advanced, which made `resume` raise an `ArgumentError`
+
 ## v0.7 (2026-10-15)
 
 - Sound Manager: Added a `destroy` method & an `isDestroyed` accessor, to free the sound instances, unregister the tracks & stop counting the max channel capacity
